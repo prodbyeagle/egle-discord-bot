@@ -18,24 +18,25 @@ client.once('ready', () => {
 });
 
 client.on('interactionCreate', async interaction => {
-   if (!interaction.isCommand()) return;
+   if (interaction.isCommand()) {
+      const command = client.commands.get(interaction.commandName);
 
-   const command = client.commands.get(interaction.commandName);
+      if (!command) return;
 
-   if (!command) return;
-
-   try {
-      await command.execute(interaction);
-   } catch (error) {
-      console.error(error);
-      await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
-   }
-});
-
-client.on('interactionCreate', async interaction => {
-   if (interaction.isModalSubmit() && interaction.customId === 'applicationModal') {
-      const { handleApplicationModalSubmit } = require('./scripts');
-      await handleApplicationModalSubmit(interaction, client);
+      try {
+         await command.execute(interaction);
+      } catch (error) {
+         console.error(error);
+         await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+      }
+   } else if (interaction.isModalSubmit()) {
+      if (interaction.customId === 'applicationModal') {
+         const { handleApplicationModalSubmit } = require('./scripts');
+         await handleApplicationModalSubmit(interaction, client);
+      } else if (interaction.customId.endsWith('ReasonModal')) {
+         const { handleReasonModalSubmit } = require('./scripts');
+         await handleReasonModalSubmit(interaction);
+      }
    } else if (interaction.isButton()) {
       const { handleButtonInteraction } = require('./scripts');
       await handleButtonInteraction(interaction);
