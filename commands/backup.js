@@ -7,7 +7,14 @@ module.exports = {
       .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
    async execute(interaction) {
       const currentDate = new Date();
-      const backupDate = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
+      const year = currentDate.getFullYear();
+      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const day = String(currentDate.getDate()).padStart(2, '0');
+      const hours = String(currentDate.getHours()).padStart(2, '0');
+      const minutes = String(currentDate.getMinutes()).padStart(2, '0');
+      const seconds = String(currentDate.getSeconds()).padStart(2, '0');
+
+      const backupDate = `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
       const replacer = (key, value) => typeof value === 'bigint' ? value.toString() : value;
 
       const backupData = {
@@ -15,15 +22,12 @@ module.exports = {
          guild: {
             id: interaction.guild.id,
             name: interaction.guild.name,
-            channels: interaction.guild.channels.cache.map(channel => {
-               const channelData = {
-                  id: channel.id,
-                  name: channel.name,
-                  type: channel.type,
-                  permissions: channel.permissionOverwrites
-               };
-               return channelData;
-            }),
+            channels: interaction.guild.channels.cache.map(channel => ({
+               id: channel.id,
+               name: channel.name,
+               type: channel.type,
+               permissions: channel.permissionOverwrites
+            })),
             roles: interaction.guild.roles.cache.map(role => ({
                id: role.id,
                name: role.name,
@@ -47,8 +51,8 @@ module.exports = {
          .setTitle('Success')
          .setDescription(`Backup was successfully created!`)
          .setTimestamp()
-         .setFooter({ text: '🦅 made by @prodbyeagle' });
+         .setFooter({ text: ' made by @prodbyeagle' });
 
-      await interaction.reply({ embeds: [embed], files: [attachment], ephemeral: true });
+      await interaction.reply({ embeds: [embed], files: [attachment] });
    },
 };
