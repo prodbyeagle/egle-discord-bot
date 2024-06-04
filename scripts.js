@@ -1,6 +1,5 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
-
-const FooterPic = "https://yt3.googleusercontent.com/N5nZ_-pLc_mTg__L4hPlPSSOOV6tZ8BDJc_MGZe8xMGwxodaO0oIL_5zVxoL47_s2gnpsFiVDxc=s88-c-k-c0x00ffffff-no-rj"
+const ACCEPT_ROLE_ID = '1243691838301274213';
 
 async function handleApplicationModalSubmit(interaction, client) {
    const ign = interaction.fields.getTextInputValue('ign');
@@ -8,6 +7,11 @@ async function handleApplicationModalSubmit(interaction, client) {
    const exclusives = interaction.fields.getTextInputValue('exclusives');
    const rank = interaction.fields.getTextInputValue('rank');
    const gamepasses = interaction.fields.getTextInputValue('gamepasses');
+
+   const user = interaction.guild.members.cache.get(interaction.user.id);
+   const joinDate = user.joinedAt.toLocaleDateString();
+   const username = user.user.username;
+   const avatar = user.user.displayAvatarURL({ format: 'png', dynamic: true });
 
    const applicationEmbed = new EmbedBuilder()
       .setTitle('🦅 New CLAN Application')
@@ -17,15 +21,23 @@ async function handleApplicationModalSubmit(interaction, client) {
          { name: 'Exclusives', value: exclusives, inline: false },
          { name: 'Rank', value: rank, inline: false },
          { name: 'Gamepasses', value: gamepasses, inline: false },
-         { name: 'Discord ID', value: interaction.user.id, inline: false }  // Store the Discord user ID
+         { name: 'Join Date', value: joinDate, inline: true },
+         { name: 'Discord ID', value: interaction.user.id, inline: true }
       )
       .setTimestamp()
-      .setFooter({ text: '🦅 made by @prodbyeagle', iconURL: FooterPic });
+      .setFooter({ text: '🦅 made by @prodbyeagle' })
+      .setAuthor({ name: username, iconURL: avatar });
 
    const buttons = new ActionRowBuilder()
       .addComponents(
-         new ButtonBuilder().setCustomId('acceptWithReason').setLabel('Accept').setStyle(ButtonStyle.Success),
-         new ButtonBuilder().setCustomId('declineWithReason').setLabel('Decline').setStyle(ButtonStyle.Danger)
+         new ButtonBuilder()
+            .setCustomId('acceptWithReason')
+            .setLabel('Accept')
+            .setStyle(ButtonStyle.Success),
+         new ButtonBuilder()
+            .setCustomId('declineWithReason')
+            .setLabel('Decline')
+            .setStyle(ButtonStyle.Danger)
       );
 
    const channel = await client.channels.fetch('1243696536668340284');
@@ -72,13 +84,24 @@ async function handleReasonModalSubmit(interaction) {
    const action = interaction.customId.includes('decline') ? 'declined' : 'accepted';
 
    const userId = interaction.message.embeds[0].fields.find(field => field.name === 'Discord ID').value;
-   const user = await interaction.client.users.fetch(userId);
+   const member = await interaction.guild.members.fetch(userId);
 
-   await user.send(`Your application was ${action} with reason: ${reason}`);
-   await interaction.reply({ content: `Application ${action} with reason sent!`, ephemeral: true });
+   await member.send(`Your application was ${action} with reason: ${reason}`);
+   await interaction.reply({ content: `Application ${action} sent! to ${member}`, ephemeral: true });
 
-   const channel = await interaction.client.channels.fetch('1243696536668340284');
-   await channel.send({ content: `Application ${action} sent!`, ephemeral: true });
+   if (action === 'accepted') {
+      try {
+         const role = interaction.guild.roles.cache.get(ACCEPT_ROLE_ID);
+         if (role) {
+            await member.roles.add(role);
+         } else {
+            await interaction.followUp({ content: `Role not found.`, ephemeral: true });
+         }
+      } catch (error) {
+         console.error('Failed to assign role:', error);
+         await interaction.followUp({ content: `There was an error assigning the role.`, ephemeral: true });
+      }
+   }
 }
 
 module.exports = {
