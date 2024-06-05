@@ -11,16 +11,26 @@ module.exports = {
             .setRequired(true)),
    async execute(interaction) {
       const channel = interaction.options.getChannel('channel');
-      await channel.permissionOverwrites.create(interaction.guild.id, { SendMessages: false });
 
-      const embed = new EmbedBuilder()
-         .setColor(0xFF0000) // Red
-         .setTitle('Channel Locked')
-         .setDescription('This channel is locked!')
-         .setTimestamp()
-         .setFooter({ text: '🦅 made by @prodbyeagle' });
+      if (!channel) {
+         return interaction.reply({ content: 'Channel not found.', ephemeral: true });
+      }
 
-      await channel.send({ embeds: [embed] });
-      await interaction.reply({ content: `${channel} has been locked.`, ephemeral: true });
+      try {
+         await channel.permissionOverwrites.edit(interaction.guild.roles.everyone, { SendMessages: false });
+
+         const embed = new EmbedBuilder()
+            .setColor(0xFF0000) // Red
+            .setTitle('Channel Locked')
+            .setDescription('This channel is locked!')
+            .setTimestamp()
+            .setFooter({ text: '🦅 made by @prodbyeagle' });
+
+         await channel.send({ embeds: [embed] });
+         await interaction.reply({ content: `${channel} has been locked.`, ephemeral: true });
+      } catch (error) {
+         console.error('Error locking the channel:', error);
+         await interaction.reply({ content: 'There was an error locking the channel.', ephemeral: true });
+      }
    }
 };
