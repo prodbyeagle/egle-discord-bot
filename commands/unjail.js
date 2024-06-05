@@ -38,21 +38,23 @@ module.exports = {
       }
 
       const mutedRoleId = '1243678246755766404';
+      const memberRole = '1243678249037594755';
 
       if (selectedUser.roles.cache.has(mutedRoleId)) {
          await selectedUser.roles.remove(mutedRoleId);
+         await selectedUser.roles.add(memberRole);
          const embed = new EmbedBuilder()
             .setColor(0x00FF00)
             .setTitle('✅ Success')
-            .setDescription(`${selectedUser.user.tag} has been unjailed.`)
+            .setDescription(`<@${selectedUser.user.id}> has been unjailed.`)
             .setTimestamp()
             .setFooter({ text: '🦅 made by @prodbyeagle' });
          await interaction.reply({ embeds: [embed], ephemeral: true });
       } else {
          const embed = new EmbedBuilder()
             .setColor(0xFFA500)
-            .setTitle('⚠️ Info')
-            .setDescription('The user does not have the muted role.')
+            .setTitle('⚠️ Warning')
+            .setDescription(`<@${selectedUser.user.id}> is not in Jail.`)
             .setTimestamp()
             .setFooter({ text: '🦅 made by @prodbyeagle' });
          await interaction.reply({ embeds: [embed], ephemeral: true });
