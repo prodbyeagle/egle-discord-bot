@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, Collection } = require('discord.js');
+const { Client, GatewayIntentBits, Collection, ActivityType } = require('discord.js');
 const fs = require('fs');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMembers] });
@@ -16,9 +16,12 @@ client.once("ready", async () => {
    console.log(`🗝️  Logged in as ${client.user.tag}`);
 
    client.user.setPresence({
-      activities: [{ name: "✅ Online" }],
-      status: "online",
-   });
+      activities: [{
+         type: ActivityType.Custom,
+         name: "egle_presence", // name is exposed through the API but not shown in the client for ActivityType.Custom
+         state: "🦅 EGLE"
+      }]
+   })
 });
 
 client.on('interactionCreate', async interaction => {
