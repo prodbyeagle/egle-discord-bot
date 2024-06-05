@@ -32,7 +32,7 @@ module.exports = {
       const gamepassesInput = new TextInputBuilder()
          .setCustomId('gamepasses')
          .setLabel('Which Gamepasses do you own?')
-         .setStyle(TextInputStyle.Short);
+         .setStyle(TextInputStyle.Paragraph);
 
       modal.addComponents(
          new ActionRowBuilder().addComponents(ignInput),

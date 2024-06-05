@@ -49,6 +49,23 @@ async function handleApplicationModalSubmit(interaction, client) {
 async function handleButtonInteraction(interaction) {
    const buttonId = interaction.customId;
 
+   const message = await interaction.message.fetch();
+   const disabledButtons = new ActionRowBuilder()
+      .addComponents(
+         new ButtonBuilder()
+            .setCustomId('acceptWithReason')
+            .setLabel('Accept')
+            .setStyle(ButtonStyle.Success)
+            .setDisabled(true),
+         new ButtonBuilder()
+            .setCustomId('declineWithReason')
+            .setLabel('Decline')
+            .setStyle(ButtonStyle.Danger)
+            .setDisabled(true)
+      );
+
+   await message.edit({ components: [disabledButtons] });
+
    switch (buttonId) {
       case 'declineWithReason':
          await openReasonModal(interaction, 'decline');
@@ -86,7 +103,14 @@ async function handleReasonModalSubmit(interaction) {
    const userId = interaction.message.embeds[0].fields.find(field => field.name === 'Discord ID').value;
    const member = await interaction.guild.members.fetch(userId);
 
-   await member.send(`Your application was ${action} with reason: ${reason}`);
+   const embed = new EmbedBuilder()
+      .setColor(action === 'declined' ? '#FF0000' : '#00FF00')
+      .setTitle(action === 'declined' ? '❌ Declined' : '✅ Accepted')
+      .setDescription(`Your application was ${action} with reason: ${reason}`)
+      .setTimestamp()
+      .setFooter({ text: '🦅 made by @prodbyeagle' });
+
+   await member.send({ embeds: [embed] });
    await interaction.reply({ content: `Application ${action} sent! to ${member}`, ephemeral: true });
 
    if (action === 'accepted') {
