@@ -3,6 +3,7 @@ const { Client, GatewayIntentBits, Collection, ActivityType, EmbedBuilder } = re
 const fs = require('fs');
 const { addXP } = require('./commands/func/addXP');
 const { getLeaderboard } = require('./commands/func/getLeaderboard');
+const { handleButtonInteraction } = require('./scripts');
 
 const client = new Client({
    intents: [
@@ -46,35 +47,52 @@ client.on('messageCreate', async message => {
 
 client.on('interactionCreate', async interaction => {
    if (interaction.isButton()) {
-      const period = interaction.customId.split('_')[0];
-      try {
-         const leaderboard = await getLeaderboard(period);
+      const customId = interaction.customId;
 
-         const embed = new EmbedBuilder()
-            .setTitle(`${capitalizeFirstLetter(period)} Leaderboard`)
-            .setColor('Blue')
-            .setTimestamp()
-            .setFooter({ text: '🦅 made by @prodbyeagle' });
+      // Überprüfe, ob der Button für das Leaderboard ist
+      if (customId === 'daily_leaderboard' || customId === 'weekly_leaderboard' || customId === 'monthly_leaderboard') {
+         const period = customId.split('_')[0];
+         try {
+            const leaderboard = await getLeaderboard(period);
 
-         leaderboard.forEach((user, index) => {
-            let rankEmoji = '';
-            if (index === 0) {
-               rankEmoji = ':first_place:';
-            } else if (index === 1) {
-               rankEmoji = ':second_place:';
-            } else if (index === 2) {
-               rankEmoji = ':third_place:';
-            }
+            const embed = new EmbedBuilder()
+               .setTitle(`${capitalizeFirstLetter(period)} Leaderboard`)
+               .setColor('Blue')
+               .setTimestamp()
+               .setFooter({ text: '🦅 made by @prodbyeagle' });
 
-            embed.addFields(
-               { name: `${rankEmoji}#${index + 1}`, value: `<@${user._id}> - XP: ${user.totalXP}` }
-            );
-         });
+            leaderboard.forEach((user, index) => {
+               let rankEmoji = '';
+               if (index === 0) {
+                  rankEmoji = ':first_place:';
+               } else if (index === 1) {
+                  rankEmoji = ':second_place:';
+               } else if (index === 2) {
+                  rankEmoji = ':third_place:';
+               }
 
-         await interaction.reply({ embeds: [embed], ephemeral: true });
-      } catch (error) {
-         console.error('Error fetching leaderboard:', error);
-         await interaction.reply({ content: 'Error fetching leaderboard.', ephemeral: true });
+               embed.addFields(
+                  { name: `${rankEmoji}#${index + 1}`, value: `<@${user._id}> - XP: ${user.totalXP}` }
+               );
+            });
+
+            await interaction.reply({ embeds: [embed], ephemeral: true });
+         } catch (error) {
+            console.error('Error fetching leaderboard:', error);
+            await interaction.reply({ content: 'Error fetching leaderboard.', ephemeral: true });
+         }
+      } else {
+         switch (customId) {
+            case 'acceptWithReason':
+               await handleButtonInteraction(interaction, 'accept');
+               break;
+            case 'declineWithReason':
+               await handleButtonInteraction(interaction, 'decline');
+               break;
+            default:
+               await interaction.reply({ content: 'Invalid button clicked.', ephemeral: true });
+               break;
+         }
       }
    }
 
