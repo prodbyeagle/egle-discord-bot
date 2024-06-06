@@ -24,8 +24,14 @@ module.exports = {
       let user = await users.findOne({ userId });
 
       if (!user) {
-         user = { userId, xp: 0, level: 0 };
+         user = { userId, username: targetUser.username, xp: 0, level: 0, banned: false };
          await users.insertOne(user);
+      }
+
+      if (user.banned) {
+         await interaction.reply({ content: 'This user is banned from the leaderboard.', ephemeral: true });
+         await client.close();
+         return;
       }
 
       const embed = new EmbedBuilder()

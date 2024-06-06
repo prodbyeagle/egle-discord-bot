@@ -1,3 +1,4 @@
+require('dotenv').config();
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { MongoClient } = require('mongodb');
 
@@ -13,10 +14,7 @@ module.exports = {
       const database = client.db('EGLEDB');
       const users = database.collection('users');
 
-      const topUsers = await users.find({ $or: [{ level: { $gt: 0 } }, { xp: { $gt: 0 } }] })
-         .sort({ level: -1, xp: -1 })
-         .limit(10)
-         .toArray();
+      const topUsers = await users.find({ banned: { $ne: true } }).sort({ level: -1, xp: -1 }).limit(10).toArray();
 
       const embed = new EmbedBuilder()
          .setTitle('Level Leaderboard')

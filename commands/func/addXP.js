@@ -2,9 +2,9 @@ require('dotenv').config();
 const { MongoClient } = require('mongodb');
 
 const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri)
+const client = new MongoClient(uri);
 
-async function addXP(userId, xp) {
+async function addXP(userId, xp, username) {
    try {
       await client.connect();
       const database = client.db('EGLEDB');
@@ -13,8 +13,17 @@ async function addXP(userId, xp) {
       let user = await users.findOne({ userId });
 
       if (!user) {
-         user = { userId, xp: 0, level: 0 };
+         user = { userId, username: username, xp: 0, level: 0, banned: false };
          await users.insertOne(user);
+      } else if (user.banned) {
+         if (!user.username) {
+            await users.updateOne({ userId }, { $set: { username: username } });
+         }
+         await client.close();
+         console.log('User is banned and XP cannot be added.');
+         return;
+      } else if (!user.username) {
+         await users.updateOne({ userId }, { $set: { username: username } });
       }
 
       user.xp += xp;
@@ -29,11 +38,11 @@ async function addXP(userId, xp) {
 
       user.xp = Math.floor(user.xp);
 
-      await users.updateOne({ userId }, { $set: { xp: user.xp, level: user.level } });
+      await users.updateOne({ userId }, { $set: { xp: user.xp, level: user.level, username: username, banned: false } });
       await client.close();
    } catch (error) {
       console.error('Error adding XP:', error);
    }
 }
 
-   module.exports = { addXP };
+module.exports = { addXP };
