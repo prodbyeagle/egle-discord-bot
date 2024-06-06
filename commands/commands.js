@@ -2,7 +2,7 @@ const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('disc
 
 module.exports = {
    data: new SlashCommandBuilder()
-      .setName('help')
+      .setName('commands')
       .setDescription('Displays available commands.')
       .setDefaultMemberPermissions(PermissionFlagsBits.SendMessages),
    async execute(interaction) {
