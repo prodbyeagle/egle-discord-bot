@@ -29,7 +29,8 @@ client.on('messageCreate', async message => {
    try {
       if (!message || !message.author || message.author.bot) return;
 
-      await addXP(message.author.id, 10);
+      const member = message.guild ? message.guild.members.cache.get(message.author.id) : null;
+      await addXP(message.author.id, 10, message.author.username, member);
    } catch (error) {
       console.error('Error adding XP:', error);
    }

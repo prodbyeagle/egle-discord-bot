@@ -37,17 +37,17 @@ async function addXP(userId, xp, username, member) {
 
       let multiplier = 1;
 
-      // const clanMemberRoleId = '1243678249037594755';
+      const clanMemberRoleId = '1243691838301274213';
 
-      // if (member && member.roles) {
-      //    member.roles.cache.forEach(role => {
-      //       if (role.id === clanMemberRoleId) {
-      //          multiplier *= 1.05;
-      //       }
-      //    });
-      // } else {
-      //    console.error('Member object is undefined or does not have roles property.');
-      // }
+      if (member && member.roles && member.roles.cache) {
+         member.roles.cache.forEach(role => {
+            if (role.id === clanMemberRoleId) {
+               multiplier *= 1.05;
+            }
+         });
+      } else {
+         console.error('Member object is undefined or does not have roles property.');
+      }
 
       const now = new Date();
       const isWeekend = (now.getDay() === 6) || (now.getDay() === 0);
