@@ -3,16 +3,16 @@ const { giveRndXP } = require('./func/giveRndXP');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('givexp')
+        .setName('giveawayxp')
         .setDescription('Give XP to random Members.')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addIntegerOption(option =>
             option.setName('members')
-                .setDescription('Anzahl der Mitglieder')
+                .setDescription('Number of members')
                 .setRequired(true))
         .addIntegerOption(option =>
             option.setName('totalxp')
-                .setDescription('Gesamte XP')
+                .setDescription('Total XP you want to giveaway')
                 .setRequired(true)),
     async execute(interaction) {
         const numMembers = interaction.options.getInteger('members');
