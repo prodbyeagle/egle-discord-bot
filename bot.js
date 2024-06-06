@@ -1,6 +1,7 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, Collection, ActivityType } = require('discord.js');
 const fs = require('fs');
+const { addXP } = require('./commands/func/addXP');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMembers] });
 
@@ -18,11 +19,22 @@ client.once("ready", async () => {
    client.user.setPresence({
       activities: [{
          type: ActivityType.Custom,
-         name: "egle_presence", // name is exposed through the API but not shown in the client for ActivityType.Custom
+         name: "egle_presence",
          state: "🦅 EGLE"
       }]
    })
 });
+
+client.on('messageCreate', async message => {
+   if (!message.author.bot) {
+      try {
+         await addXP(message.author.id, 10);
+      } catch (error) {
+         console.error('Error adding XP:', error);
+      }
+   }
+});
+
 
 client.on('interactionCreate', async interaction => {
    if (interaction.isCommand()) {
