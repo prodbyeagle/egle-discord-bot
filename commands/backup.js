@@ -51,7 +51,7 @@ module.exports = {
          .setTitle('Success')
          .setDescription(`Backup was successfully created!`)
          .setTimestamp()
-         .setFooter({ text: ' made by @prodbyeagle' });
+         .setFooter({ text: '🦅 made by @prodbyeagle' });
 
       await interaction.reply({ embeds: [embed], files: [attachment] });
    },
