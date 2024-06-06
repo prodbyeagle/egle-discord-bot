@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { MongoClient } = require('mongodb');
 
 const uri = process.env.MONGODB_URI;
@@ -9,6 +9,7 @@ module.exports = {
    data: new SlashCommandBuilder()
       .setName('unban')
       .setDescription('Unban a user from the leaderboard')
+      .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
       .addUserOption(option =>
          option.setName('user')
             .setDescription('The user to unban')
