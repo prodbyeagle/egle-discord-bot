@@ -1,6 +1,7 @@
 require('dotenv').config();
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
 const { MongoClient } = require('mongodb');
+const { getLeaderboard } = require('./func/getLeaderboard');  // Ensure correct path
 
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri);
@@ -37,7 +38,25 @@ module.exports = {
          );
       });
 
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      const dailyButton = new ButtonBuilder()
+         .setCustomId('daily_leaderboard')
+         .setLabel('Daily')
+         .setStyle(ButtonStyle.Primary);
+
+      const weeklyButton = new ButtonBuilder()
+         .setCustomId('weekly_leaderboard')
+         .setLabel('Weekly')
+         .setStyle(ButtonStyle.Primary);
+
+      const monthlyButton = new ButtonBuilder()
+         .setCustomId('monthly_leaderboard')
+         .setLabel('Monthly')
+         .setStyle(ButtonStyle.Primary);
+
+      const actionRow = new ActionRowBuilder()
+         .addComponents(dailyButton, weeklyButton, monthlyButton);
+
+      await interaction.reply({ embeds: [embed], components: [actionRow], ephemeral: true });
       await client.close();
    }
 };

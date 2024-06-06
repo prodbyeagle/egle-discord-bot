@@ -22,21 +22,18 @@ async function addXP(userId, xp, username, member) {
       let user = await users.findOne({ userId });
 
       if (!user) {
-         user = { userId, username: username, xp: 0, level: 0, banned: false };
+         user = { userId, username: username, xp: 0, level: 0, banned: false, xpHistory: [] };
          await users.insertOne(user);
-
       } else if (user.banned) {
          if (!user.username) {
             await users.updateOne({ userId }, { $set: { username: username } });
          }
-
          return;
       } else if (!user.username) {
          await users.updateOne({ userId }, { $set: { username: username } });
       }
 
       let multiplier = 1;
-
       const clanMemberRoleId = '1243691838301274213';
 
       if (member && member.roles && member.roles.cache) {
@@ -60,7 +57,8 @@ async function addXP(userId, xp, username, member) {
          multiplier *= activeEvent.multiplier;
       }
 
-      user.xp += Math.floor(xp * multiplier);
+      const gainedXP = Math.floor(xp * multiplier);
+      user.xp += gainedXP;
       let requiredXP = Math.floor(100 * Math.pow(1.1, user.level));
 
       while (user.xp >= requiredXP) {
@@ -71,7 +69,13 @@ async function addXP(userId, xp, username, member) {
 
       user.xp = Math.floor(user.xp);
 
-      await users.updateOne({ userId }, { $set: { xp: user.xp, level: user.level, username: username } });
+      await users.updateOne(
+         { userId },
+         {
+            $set: { xp: user.xp, level: user.level, username: username },
+            $push: { xpHistory: { xp: gainedXP, timestamp: now } }
+         }
+      );
    } catch (error) {
       console.error('Error adding XP:', error);
    } finally {

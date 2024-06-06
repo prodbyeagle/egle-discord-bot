@@ -1,9 +1,17 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, Collection, ActivityType } = require('discord.js');
+const { Client, GatewayIntentBits, Collection, ActivityType, EmbedBuilder } = require('discord.js');
 const fs = require('fs');
 const { addXP } = require('./commands/func/addXP');
+const { getLeaderboard } = require('./commands/func/getLeaderboard');
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMembers] });
+const client = new Client({
+   intents: [
+      GatewayIntentBits.Guilds,
+      GatewayIntentBits.GuildMessages,
+      GatewayIntentBits.MessageContent,
+      GatewayIntentBits.GuildMembers
+   ]
+});
 
 client.commands = new Collection();
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
@@ -22,7 +30,7 @@ client.once("ready", async () => {
          name: "egle_presence",
          state: "🦅 EGLE"
       }]
-   })
+   });
 });
 
 client.on('messageCreate', async message => {
@@ -37,6 +45,39 @@ client.on('messageCreate', async message => {
 });
 
 client.on('interactionCreate', async interaction => {
+   if (interaction.isButton()) {
+      const period = interaction.customId.split('_')[0];
+      try {
+         const leaderboard = await getLeaderboard(period);
+
+         const embed = new EmbedBuilder()
+            .setTitle(`${capitalizeFirstLetter(period)} Leaderboard`)
+            .setColor('Blue')
+            .setTimestamp()
+            .setFooter({ text: '🦅 made by @prodbyeagle' });
+
+         leaderboard.forEach((user, index) => {
+            let rankEmoji = '';
+            if (index === 0) {
+               rankEmoji = ':first_place:';
+            } else if (index === 1) {
+               rankEmoji = ':second_place:';
+            } else if (index === 2) {
+               rankEmoji = ':third_place:';
+            }
+
+            embed.addFields(
+               { name: `${rankEmoji}#${index + 1}`, value: `<@${user._id}> - XP: ${user.totalXP}` }
+            );
+         });
+
+         await interaction.reply({ embeds: [embed], ephemeral: true });
+      } catch (error) {
+         console.error('Error fetching leaderboard:', error);
+         await interaction.reply({ content: 'Error fetching leaderboard.', ephemeral: true });
+      }
+   }
+
    if (interaction.isCommand()) {
       const command = client.commands.get(interaction.commandName);
 
@@ -83,10 +124,11 @@ client.on('interactionCreate', async interaction => {
          const { handleReasonModalSubmit } = require('./scripts');
          await handleReasonModalSubmit(interaction);
       }
-   } else if (interaction.isButton()) {
-      const { handleButtonInteraction } = require('./scripts');
-      await handleButtonInteraction(interaction);
    }
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
+function capitalizeFirstLetter(string) {
+   return string.charAt(0).toUpperCase() + string.slice(1);
+}
