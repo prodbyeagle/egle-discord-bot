@@ -9,7 +9,6 @@ module.exports = {
       const commands = interaction.client.commands;
       const commandList = commands.map(command => {
          let description = `**/${command.data.name}**: ${command.data.description}`;
-         // Check if the command requires admin permissions
          const permissions = command.data.defaultPermission !== undefined ? BigInt(command.data.defaultPermission) : 0n;
          if (permissions & BigInt(PermissionFlagsBits.Administrator)) {
             description += ' (Admin Only)';
