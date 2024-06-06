@@ -26,15 +26,14 @@ client.once("ready", async () => {
 });
 
 client.on('messageCreate', async message => {
-   if (!message.author.bot) {
-      try {
-         await addXP(message.author.id, 10);
-      } catch (error) {
-         console.error('Error adding XP:', error);
-      }
+   try {
+      if (!message || !message.author || message.author.bot) return;
+
+      await addXP(message.author.id, 10);
+   } catch (error) {
+      console.error('Error adding XP:', error);
    }
 });
-
 
 client.on('interactionCreate', async interaction => {
    if (interaction.isCommand()) {
