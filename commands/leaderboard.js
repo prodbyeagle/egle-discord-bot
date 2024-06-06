@@ -2,7 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { MongoClient } = require('mongodb');
 
 const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri)
+const client = new MongoClient(uri);
 
 module.exports = {
    data: new SlashCommandBuilder()
@@ -13,7 +13,10 @@ module.exports = {
       const database = client.db('EGLEDB');
       const users = database.collection('users');
 
-      const topUsers = await users.find().sort({ level: -1, xp: -1 }).limit(10).toArray();
+      const topUsers = await users.find({ $or: [{ level: { $gt: 0 } }, { xp: { $gt: 0 } }] })
+         .sort({ level: -1, xp: -1 })
+         .limit(10)
+         .toArray();
 
       const embed = new EmbedBuilder()
          .setTitle('Level Leaderboard')
