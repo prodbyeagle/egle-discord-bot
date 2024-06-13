@@ -18,7 +18,6 @@ module.exports = {
       const database = client.db('EGLEDB');
       const users = database.collection('users');
 
-      // Get the user option or default to the interaction user
       const targetUser = interaction.options.getUser('user') || interaction.user;
       const userId = targetUser.id;
       let user = await users.findOne({ userId });
