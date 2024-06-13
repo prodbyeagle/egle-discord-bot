@@ -53,6 +53,12 @@ module.exports = {
          .setTimestamp()
          .setFooter({ text: '🦅 made by @prodbyeagle' });
 
-      await interaction.reply({ embeds: [embed], files: [attachment] });
+      const sentMessage = await interaction.channel.send({ embeds: [embed], files: [attachment] });
+
+      try {
+         await sentMessage.pin();
+      } catch (error) {
+         console.error('Error pinning the message:', error);
+      }
    },
 };
