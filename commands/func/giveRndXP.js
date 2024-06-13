@@ -10,8 +10,6 @@ async function giveRndXP(numMembers, totalXP, guild) {
 
       const database = client.db('EGLEDB');
       const users = database.collection('users');
-
-      // Fetch all members
       const members = await guild.members.fetch();
       const nonBotMembers = Array.from(members.values()).filter(member => !member.user.bot);
 
@@ -19,7 +17,6 @@ async function giveRndXP(numMembers, totalXP, guild) {
          throw new Error('No members found.');
       }
 
-      // Select random members
       const selectedMembers = [];
       while (selectedMembers.length < numMembers && selectedMembers.length < nonBotMembers.length) {
          const randomIndex = Math.floor(Math.random() * nonBotMembers.length);
@@ -29,7 +26,6 @@ async function giveRndXP(numMembers, totalXP, guild) {
          }
       }
 
-      // Distribute XP
       for (const member of selectedMembers) {
          const userId = member.user.id;
          let user = await users.findOne({ userId });
@@ -50,7 +46,6 @@ async function giveRndXP(numMembers, totalXP, guild) {
          await users.updateOne({ userId }, { $set: { xp: user.xp, level: user.level } });
       }
    } finally {
-      // Close the MongoDB client
       await client.close();
    }
 }

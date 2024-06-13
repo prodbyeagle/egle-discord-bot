@@ -13,6 +13,7 @@ async function getActiveEvent() {
 }
 
 async function addXP(userId, xp, username, member) {
+   let updatedUser;
    try {
       await client.connect();
 
@@ -76,11 +77,14 @@ async function addXP(userId, xp, username, member) {
             $push: { xpHistory: { xp: gainedXP, timestamp: now } }
          }
       );
+
+      updatedUser = user;
    } catch (error) {
       console.error('Error adding XP:', error);
    } finally {
       await client.close();
    }
+   return updatedUser;
 }
 
 module.exports = { addXP };

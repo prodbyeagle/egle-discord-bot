@@ -4,6 +4,8 @@ const fs = require('fs');
 const { addXP } = require('./commands/func/addXP');
 const { getLeaderboard } = require('./commands/func/getLeaderboard');
 const { handleButtonInteraction } = require('./scripts');
+const { checkEventTime } = require('./commands/func/checkEventTime');
+const { sendLevelUpMessage } = require('./commands/func/sendLevelUpMessage');
 
 const client = new Client({
    intents: [
@@ -24,6 +26,11 @@ for (const file of commandFiles) {
 
 client.once("ready", async () => {
    console.log(`🗝️  Logged in as ${client.user.tag}`);
+   await checkEventTime();
+
+   setInterval(async () => {
+      await checkEventTime();
+   }, 60000);
 
    client.user.setPresence({
       activities: [{
@@ -39,9 +46,20 @@ client.on('messageCreate', async message => {
       if (!message || !message.author || message.author.bot) return;
 
       const member = message.guild ? message.guild.members.cache.get(message.author.id) : null;
-      await addXP(message.author.id, 10, message.author.username, member);
+      const xpGained = 10;
+      const updatedUser = await addXP(message.author.id, xpGained, message.author.username, member);
+
+      if (updatedUser) {
+         const newLevel = updatedUser.level;
+         const previousXP = updatedUser.xp - Math.floor(xpGained * (updatedUser.level > 1 ? 1.1 ** (updatedUser.level - 1) : 1));
+         const requiredXP = Math.floor(100 * 1.1 ** (newLevel - 1));
+
+         if (previousXP < requiredXP && updatedUser.xp >= requiredXP) {
+            await sendLevelUpMessage(message.author, newLevel);
+         }
+      }
    } catch (error) {
-      console.error('Error adding XP:', error);
+      console.error('Error adding XP or sending level up message:', error);
    }
 });
 
