@@ -1,48 +1,29 @@
-const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
-const { giveRndXP } = require('./func/giveRndXP');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { giveXP } = require('./func/giveXP');
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('giveawayxp')
-        .setDescription('Give XP to random Members.')
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-        .addIntegerOption(option =>
-            option.setName('members')
-                .setDescription('Number of members')
-                .setRequired(true))
-        .addIntegerOption(option =>
-            option.setName('totalxp')
-                .setDescription('Total XP you want to giveaway')
-                .setRequired(true)),
-    async execute(interaction) {
-        const numMembers = interaction.options.getInteger('members');
-        const totalXP = interaction.options.getInteger('totalxp');
-        const guild = interaction.guild;
+   data: new SlashCommandBuilder()
+      .setName('givexp')
+      .setDescription('Gives XP to a specified user')
+      .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+      .addUserOption(option =>
+         option.setName('user')
+            .setDescription('The user to give XP to')
+            .setRequired(true))
+      .addIntegerOption(option =>
+         option.setName('xp_value')
+            .setDescription('The amount of XP to give')
+            .setRequired(true)),
+   async execute(interaction) {
+      try {
+         const user = interaction.options.getUser('user');
+         const xp_value = interaction.options.getInteger('xp_value');
 
-        try {
-            await giveRndXP(numMembers, totalXP, guild);
-
-            const embed = new EmbedBuilder()
-                .setColor(0x7289DA)
-                .setTitle('XP Given')
-                .setDescription(`Successfully given ${totalXP} XP to ${numMembers} members.`)
-                .setTimestamp()
-                .setFooter({ text: '🦅 made by @prodbyeagle' });
-
-            if (numMembers <= 0) {
-                embed.setDescription('No members were mentioned.');
-            }
-
-            await interaction.reply({ embeds: [embed], ephemeral: true });
-        } catch (error) {
-            console.error('Error giving XP:', error);
-            const errorEmbed = new EmbedBuilder()
-                .setColor(0xFF0000)
-                .setTitle('Error')
-                .setDescription('There was an error while giving XP.')
-                .setTimestamp()
-                .setFooter({ text: '🦅 made by @prodbyeagle' });
-            await interaction.reply({ embeds: [errorEmbed], ephemeral: true });
-        }
-    }
+         await giveXP(user.username, xp_value);
+         await interaction.reply(`Gave ${xp_value} XP to user ${user.username}.`);
+      } catch (error) {
+         console.error('Error giving XP:', error);
+         await interaction.reply({ content: 'There was an error giving XP.', ephemeral: true });
+      }
+   },
 };
