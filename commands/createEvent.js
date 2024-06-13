@@ -9,7 +9,7 @@ module.exports = {
    data: new SlashCommandBuilder()
       .setName('create')
       .setDescription('Create a new XP boost event')
-      .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+      .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
       .addStringOption(option =>
          option.setName('name')
             .setDescription('The name of the event')
