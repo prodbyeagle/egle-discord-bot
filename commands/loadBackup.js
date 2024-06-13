@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
 const axios = require('axios');
+const { logError } = require('./func/error');
 
 module.exports = {
    data: new SlashCommandBuilder()
@@ -38,7 +39,7 @@ module.exports = {
 
          await interaction.followUp(`Backup file has been successfully read and found ${parsedData.guild.channels.length} channels and ${parsedData.guild.roles.length} roles.`);
       } catch (error) {
-         console.error('Error loading backup:', error);
+         await logError(interaction.client, error, 'loadBackup');
          if (!interaction.replied) {
             await interaction.reply({ content: 'There was an error while loading the backup.', ephemeral: true });
          }

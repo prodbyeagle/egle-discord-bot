@@ -1,6 +1,7 @@
 require('dotenv').config();
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { MongoClient } = require('mongodb');
+const { logError } = require('./func/error');
 
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri);
@@ -15,20 +16,27 @@ module.exports = {
             .setDescription('The user to ban')
             .setRequired(true)),
    async execute(interaction) {
-      await client.connect();
-      const database = client.db('EGLEDB');
-      const users = database.collection('users');
+      try {
+         await client.connect();
+         const database = client.db('EGLEDB');
+         const users = database.collection('users');
 
-      const targetUser = interaction.options.getUser('user');
-      const userId = targetUser.id;
+         const targetUser = interaction.options.getUser('user');
+         const userId = targetUser.id;
 
-      await users.updateOne(
-         { userId },
-         { $set: { banned: true, username: targetUser.username } },
-         { upsert: true }
-      );
+         await users.updateOne(
+            { userId },
+            { $set: { banned: true, username: targetUser.username } },
+            { upsert: true }
+         );
 
-      await interaction.reply({ content: `User <@${userId}> has been banned from the leaderboard.`, ephemeral: true });
-      await client.close();
+         await interaction.reply({ content: `User <@${userId}> has been banned from the leaderboard.`, ephemeral: true });
+      } catch (error) {
+         console.error('Error banning user:', error);
+         await logError(client, error, 'ban');
+         await interaction.reply({ content: 'There was an error banning the user.', ephemeral: true });
+      } finally {
+         await client.close();
+      }
    }
 };

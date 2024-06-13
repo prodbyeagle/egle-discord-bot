@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const { MongoClient } = require('mongodb');
+const { logError } = require('./func/error');
 
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri);
@@ -40,7 +41,7 @@ module.exports = {
 
          await interaction.reply({ embeds: [embed], ephemeral: true });
       } catch (error) {
-         console.error('Error resetting XP:', error);
+         await logError(interaction.client, error, 'resetXP');
          const errorEmbed = new EmbedBuilder()
             .setColor(0xFF0000)
             .setTitle('Error')

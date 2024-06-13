@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { MongoClient } = require('mongodb');
+const { logError } = require('./func/error');
 
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri);
@@ -24,7 +25,7 @@ module.exports = {
             await interaction.reply({ content: `Event "${activeEvent.name}" has been cancelled.`, ephemeral: true });
          }
       } catch (error) {
-         console.error('Error cancelling event:', error);
+         await logError(client, error, 'cancelEvent');
          await interaction.reply({ content: 'There was an error while cancelling the event.', ephemeral: true });
       } finally {
          await client.close();

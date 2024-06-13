@@ -15,9 +15,9 @@ async function logCommand(client, command, user) {
       .setTitle('Command Log')
       .setColor('Yellow')
       .addFields(
-         { name: 'User', value: `<@${user.id}> (${user.id})`, inline: true },
+         { name: 'User', value: `<@${user.id}>`, inline: true },
          { name: 'Command', value: command, inline: true },
-         { name: 'Timestamp', value: `<t:${timestamp}:R>`, inline: false }
+         { name: 'Timestamp', value: `<t:${timestamp}:R>`, inline: true }
       )
       .setFooter({ text: `🦅 made by @prodbyeagle` })
       .setTimestamp();

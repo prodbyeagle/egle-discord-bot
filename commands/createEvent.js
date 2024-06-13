@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const { MongoClient } = require('mongodb');
 require('dotenv').config();
+const { logError } = require('./func/error');
 
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri);
@@ -63,7 +64,7 @@ module.exports = {
 
          await interaction.reply({ embeds: [embed], ephemeral: true });
       } catch (error) {
-         console.error('Error creating event:', error);
+         await logError(client, error, 'create');
          await interaction.reply({ content: 'There was an error while creating the event.', ephemeral: true });
       } finally {
          await client.close();

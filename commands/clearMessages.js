@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
+const { logError } = require('./func/error');
 
 module.exports = {
    data: new SlashCommandBuilder()
@@ -21,9 +22,6 @@ module.exports = {
          const excludedRole = interaction.options.getRole('exclude_role');
          let messagesToDelete = [];
 
-         console.log('Delete Pinned Messages Option:', pinnedOption);
-         console.log('Excluded Role:', excludedRole ? excludedRole.name : 'None');
-
          await interaction.channel.messages.fetch({ limit: 100 }).then(messages => {
             messages.forEach(msg => {
                if ((!msg.pinned || pinnedOption) && (!excludedRole || !msg.member.roles.cache.has(excludedRole.id))) {
@@ -31,8 +29,6 @@ module.exports = {
                }
             });
          });
-
-         console.log('Messages to delete:', messagesToDelete.map(msg => msg.content));
 
          const embed = new EmbedBuilder()
             .setColor(0x0099FF)
@@ -49,7 +45,7 @@ module.exports = {
 
          await interaction.reply({ embeds: [embed], ephemeral: true });
       } catch (error) {
-         console.error('Error clearing messages:', error);
+         await logError(client, error, 'clearMessages');
          await interaction.reply({ content: 'There was an error while clearing messages.', ephemeral: true });
       }
    }

@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, AttachmentBuilder } = require('discord.js');
+const { logError } = require('./func/error');
 
 module.exports = {
    data: new SlashCommandBuilder()
@@ -59,7 +60,7 @@ module.exports = {
       try {
          await sentMessage.pin();
       } catch (error) {
-         console.error('Error pinning the message:', error);
+         await logError(client, error, 'Backup');
       }
    },
 };

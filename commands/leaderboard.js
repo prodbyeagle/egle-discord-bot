@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
 const { MongoClient } = require('mongodb');
-const { getLeaderboard } = require('./func/getLeaderboard');
+const { logError } = require('./func/error');
 
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri);
@@ -73,7 +73,7 @@ module.exports = {
 
          await interaction.reply({ embeds: [embed], components: [actionRow], ephemeral: true });
       } catch (error) {
-         console.error('Error fetching leaderboard:', error);
+         await logError(client, error, 'leaderboard');
          await interaction.reply({ content: 'Error fetching leaderboard.', ephemeral: true });
       } finally {
          await client.close();

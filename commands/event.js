@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { MongoClient } = require('mongodb');
 require('dotenv').config();
+const { logError } = require('./func/error');
 
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri);
@@ -27,7 +28,8 @@ module.exports = {
                .setTitle(`Active Event: ${activeEvent.name}`)
                .setDescription(activeEvent.desc)
                .addFields(
-                  { name: 'Multiplier', value: activeEvent.multiplier.toString(), inline: true },
+                  {
+                     name: 'Multiplier', value: `${activeEvent.multiplier.toString()}x`, inline: true },
                   { name: 'Duration', value: `${activeEvent.duration} hours`, inline: true },
                   { name: 'Started At', value: `<t:${eventStartTime}:R>`, inline: true },
                   { name: 'Remaining Time', value: `<t:${eventEndTime}:R>`, inline: true }
@@ -39,7 +41,7 @@ module.exports = {
             await interaction.reply({ embeds: [embed], ephemeral: true });
          }
       } catch (error) {
-         console.error('Error fetching active event:', error);
+         await logError(client, error, 'Event');
          await interaction.reply({ content: 'There was an error while fetching the active event.', ephemeral: true });
       } finally {
          await client.close();
