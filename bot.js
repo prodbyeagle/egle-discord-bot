@@ -6,6 +6,8 @@ const { getLeaderboard } = require('./commands/func/getLeaderboard');
 const { handleButtonInteraction } = require('./scripts');
 const { checkEventTime } = require('./commands/func/checkEventTime');
 const { sendLevelUpMessage } = require('./commands/func/sendLevelUpMessage');
+const { logCommand } = require('./commands/func/logging');
+const { logError } = require('./commands/func/error');
 
 const client = new Client({
    intents: [
@@ -26,19 +28,29 @@ for (const file of commandFiles) {
 
 client.once("ready", async () => {
    console.log(`🗝️  Logged in as ${client.user.tag}`);
-   await checkEventTime();
-
-   setInterval(async () => {
+   try {
       await checkEventTime();
-   }, 60000);
 
-   client.user.setPresence({
-      activities: [{
-         type: ActivityType.Custom,
-         name: "egle_presence",
-         state: "🦅 EGLE"
-      }]
-   });
+      setInterval(async () => {
+         try {
+            await checkEventTime();
+         } catch (error) {
+            console.error('Error in setInterval checkEventTime:', error);
+            await logError(client, error, 'setInterval checkEventTime');
+         }
+      }, 60000);
+
+      client.user.setPresence({
+         activities: [{
+            type: ActivityType.Custom,
+            name: "egle_presence",
+            state: "🦅 EGLE"
+         }]
+      });
+   } catch (error) {
+      console.error('Error in ready event:', error);
+      await logError(client, error, 'ready event');
+   }
 });
 
 client.on('messageCreate', async message => {
@@ -58,108 +70,124 @@ client.on('messageCreate', async message => {
             await sendLevelUpMessage(message.author, newLevel);
          }
       }
+
+
    } catch (error) {
       console.error('Error adding XP or sending level up message:', error);
+      await logError(client, error, 'messageCreate');
    }
 });
 
 client.on('interactionCreate', async interaction => {
-   if (interaction.isButton()) {
-      const customId = interaction.customId;
+   try {
+      if (interaction.isButton()) {
+         const customId = interaction.customId;
 
-      // Überprüfe, ob der Button für das Leaderboard ist
-      if (customId === 'daily_leaderboard' || customId === 'weekly_leaderboard' || customId === 'monthly_leaderboard') {
-         const period = customId.split('_')[0];
+         // Überprüfe, ob der Button für das Leaderboard ist
+         if (customId === 'daily_leaderboard' || customId === 'weekly_leaderboard' || customId === 'monthly_leaderboard') {
+            const period = customId.split('_')[0];
+            try {
+               const leaderboard = await getLeaderboard(period);
+
+               const embed = new EmbedBuilder()
+                  .setTitle(`${capitalizeFirstLetter(period)} Leaderboard`)
+                  .setColor('Blue')
+                  .setTimestamp()
+                  .setFooter({ text: '🦅 made by @prodbyeagle' });
+
+               leaderboard.forEach((user, index) => {
+                  let rankEmoji = '';
+                  if (index === 0) {
+                     rankEmoji = ':first_place:';
+                  } else if (index === 1) {
+                     rankEmoji = ':second_place:';
+                  } else if (index === 2) {
+                     rankEmoji = ':third_place:';
+                  }
+
+                  embed.addFields(
+                     { name: `${rankEmoji}#${index + 1}`, value: `<@${user._id}> - XP: ${user.totalXP}` }
+                  );
+               });
+
+               await interaction.reply({ embeds: [embed], ephemeral: true });
+            } catch (error) {
+               await logError(client, error, `interactionCreate: Button ${interaction.customId}`);
+               await interaction.reply({ content: 'Error fetching leaderboard.', ephemeral: true });
+            }
+         } else {
+            try {
+               switch (customId) {
+                  case 'acceptWithReason':
+                     await handleButtonInteraction(interaction, 'accept');
+                     break;
+                  case 'declineWithReason':
+                     await handleButtonInteraction(interaction, 'decline');
+                     break;
+                  default:
+                     await interaction.reply({ content: 'Invalid button clicked.', ephemeral: true });
+                     break;
+               }
+            } catch (error) {
+               await logError(client, error, `interactionCreate: Button ${interaction.customId}`);
+            }
+         }
+      }
+
+      if (interaction.isCommand()) {
+         const command = client.commands.get(interaction.commandName);
+
+         if (!command) return;
+
          try {
-            const leaderboard = await getLeaderboard(period);
+            await command.execute(interaction);
+            await logCommand(client, interaction.commandName, interaction.user);
+         } catch (error) {
+            await logError(client, error, `interactionCreate: Command ${interaction.commandName}`);
+            await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+         }
+      } else if (interaction.isAutocomplete()) {
+         const focusedOption = interaction.options.getFocused(true);
 
-            const embed = new EmbedBuilder()
-               .setTitle(`${capitalizeFirstLetter(period)} Leaderboard`)
-               .setColor('Blue')
-               .setTimestamp()
-               .setFooter({ text: '🦅 made by @prodbyeagle' });
+         if (interaction.commandName === 'unjail' && focusedOption.name === 'search') {
+            const guild = interaction.guild;
+            const mutedRoleId = '1243678246755766404';
 
-            leaderboard.forEach((user, index) => {
-               let rankEmoji = '';
-               if (index === 0) {
-                  rankEmoji = ':first_place:';
-               } else if (index === 1) {
-                  rankEmoji = ':second_place:';
-               } else if (index === 2) {
-                  rankEmoji = ':third_place:';
+            try {
+               const mutedRole = await guild.roles.fetch(mutedRoleId);
+
+               if (!mutedRole) {
+                  console.error(`Role with ID ${mutedRoleId} not found.`);
+                  return;
                }
 
-               embed.addFields(
-                  { name: `${rankEmoji}#${index + 1}`, value: `<@${user._id}> - XP: ${user.totalXP}` }
-               );
-            });
+               await guild.members.fetch();
 
-            await interaction.reply({ embeds: [embed], ephemeral: true });
-         } catch (error) {
-            console.error('Error fetching leaderboard:', error);
-            await interaction.reply({ content: 'Error fetching leaderboard.', ephemeral: true });
-         }
-      } else {
-         switch (customId) {
-            case 'acceptWithReason':
-               await handleButtonInteraction(interaction, 'accept');
-               break;
-            case 'declineWithReason':
-               await handleButtonInteraction(interaction, 'decline');
-               break;
-            default:
-               await interaction.reply({ content: 'Invalid button clicked.', ephemeral: true });
-               break;
-         }
-      }
-   }
+               const membersWithMutedRole = mutedRole.members.map(member => ({
+                  name: member.user.username,
+                  value: member.user.id
+               }));
 
-   if (interaction.isCommand()) {
-      const command = client.commands.get(interaction.commandName);
-
-      if (!command) return;
-
-      try {
-         await command.execute(interaction);
-      } catch (error) {
-         console.error(error);
-         await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
-      }
-   } else if (interaction.isAutocomplete()) {
-      const focusedOption = interaction.options.getFocused(true);
-
-      if (interaction.commandName === 'unjail' && focusedOption.name === 'search') {
-         const guild = interaction.guild;
-         const mutedRoleId = '1243678246755766404';
-
-         try {
-            const mutedRole = await guild.roles.fetch(mutedRoleId);
-
-            if (!mutedRole) {
-               console.error(`Role with ID ${mutedRoleId} not found.`);
-               return;
+               await interaction.respond(membersWithMutedRole.slice(0, 25));
+            } catch (error) {
+               await logError(client, error, 'interactionCreate: Autocomplete unjail search');
             }
-
-            await guild.members.fetch();
-
-            const membersWithMutedRole = mutedRole.members.map(member => ({
-               name: member.user.username,
-               value: member.user.id
-            }));
-
-            await interaction.respond(membersWithMutedRole.slice(0, 25));
+         }
+      } else if (interaction.isModalSubmit()) {
+         try {
+            if (interaction.customId === 'applicationModal') {
+               const { handleApplicationModalSubmit } = require('./scripts');
+               await handleApplicationModalSubmit(interaction, client);
+            } else if (interaction.customId.endsWith('ReasonModal')) {
+               const { handleReasonModalSubmit } = require('./scripts');
+               await handleReasonModalSubmit(interaction);
+            }
          } catch (error) {
-            console.error('Error fetching members or roles:', error);
+            await logError(client, error, `interactionCreate: ModalSubmit ${interaction.customId}`);
          }
       }
-   } else if (interaction.isModalSubmit()) {
-      if (interaction.customId === 'applicationModal') {
-         const { handleApplicationModalSubmit } = require('./scripts');
-         await handleApplicationModalSubmit(interaction, client);
-      } else if (interaction.customId.endsWith('ReasonModal')) {
-         const { handleReasonModalSubmit } = require('./scripts');
-         await handleReasonModalSubmit(interaction);
-      }
+   } catch (error) {
+      await logError(client, error, 'interactionCreate event');
    }
 });
 

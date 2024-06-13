@@ -1,5 +1,6 @@
 require('dotenv').config();
 const { MongoClient } = require('mongodb');
+const { logError } = require('./error');
 
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri);
@@ -43,7 +44,9 @@ async function addXP(userId, xp, username, member) {
             }
          });
       } else {
-         console.error('Member object is undefined or does not have roles property.');
+         const error = new Error('Member object is undefined or does not have roles property.');
+         console.error(error.message);
+         await logError(client, error, 'addXP');
       }
 
       const now = new Date();
@@ -51,7 +54,7 @@ async function addXP(userId, xp, username, member) {
       if (isWeekend) {
          multiplier *= 1.1;
       } else {
-      console.log("not weekend yet")
+         console.log("not weekend yet");
       }
 
       const activeEvent = await getActiveEvent();
@@ -80,6 +83,7 @@ async function addXP(userId, xp, username, member) {
       );
    } catch (error) {
       console.error('Error adding XP:', error);
+      await logError(client, error, 'addXP');
    } finally {
       await client.close();
    }
