@@ -13,7 +13,6 @@ async function getActiveEvent() {
 }
 
 async function addXP(userId, xp, username, member) {
-   let updatedUser;
    try {
       await client.connect();
 
@@ -51,6 +50,8 @@ async function addXP(userId, xp, username, member) {
       const isWeekend = (now.getDay() === 6) || (now.getDay() === 0);
       if (isWeekend) {
          multiplier *= 1.1;
+      } else {
+      console.log("not weekend yet")
       }
 
       const activeEvent = await getActiveEvent();
@@ -77,14 +78,11 @@ async function addXP(userId, xp, username, member) {
             $push: { xpHistory: { xp: gainedXP, timestamp: now } }
          }
       );
-
-      updatedUser = user;
    } catch (error) {
       console.error('Error adding XP:', error);
    } finally {
       await client.close();
    }
-   return updatedUser;
 }
 
 module.exports = { addXP };
