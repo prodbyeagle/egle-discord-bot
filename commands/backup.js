@@ -54,6 +54,7 @@ module.exports = {
          .setFooter({ text: '🦅 made by @prodbyeagle' });
 
       const sentMessage = await interaction.channel.send({ embeds: [embed], files: [attachment] });
+      await interaction.reply("🫵 Backup Send!")
 
       try {
          await sentMessage.pin();
