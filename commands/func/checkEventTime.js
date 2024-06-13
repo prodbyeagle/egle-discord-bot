@@ -21,7 +21,6 @@ async function checkEventTime() {
             await events.updateOne({ _id: activeEvent._id }, { $set: { active: false } });
             console.log(`Event ${activeEvent.name} has ended and status updated.`);
          } else {
-            console.log(`Event ${activeEvent.name} is still active.`);
          }
       } else {
          console.log('No active event found.');
