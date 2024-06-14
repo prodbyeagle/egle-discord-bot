@@ -16,12 +16,12 @@ async function checkEventTime() {
 
          if (currentTime > eventEndTime) {
             await events.updateOne({ _id: activeEvent._id }, { $set: { active: false } });
-            console.log(`Event ${activeEvent.name} has ended and status updated.`);
+            // console.log(`Event ${activeEvent.name} has ended and status updated.`);
          } else {
-            console.log(`Event ${activeEvent.name} is still active.`);
+            // console.log(`Event ${activeEvent.name} is still active.`);
          }
       } else {
-         console.log('No active events found.');
+         // console.log('No active events found.');
       }
    } catch (error) {
       console.error('Error checking event time:', error);

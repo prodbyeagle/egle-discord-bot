@@ -79,11 +79,7 @@ client.on('messageCreate', async message => {
          const previousXP = updatedUser.xp - Math.floor(xpGained * (updatedUser.level > 1 ? 1.1 ** (updatedUser.level - 1) : 1));
          const requiredXP = Math.floor(100 * 1.1 ** (newLevel - 1));
 
-         console.log(`User ${message.author.id} (${message.author.username}) - XP: ${updatedUser.xp}, Level: ${updatedUser.level}`);
-         console.log(`Previous XP: ${previousXP}, Required XP for level up: ${requiredXP}`);
-
          if (previousXP < requiredXP && updatedUser.xp >= requiredXP) {
-            console.log(`User ${message.author.id} (${message.author.username}) leveled up to ${newLevel}`);
             await sendLevelUpMessage(message.author, newLevel);
          }
       }
