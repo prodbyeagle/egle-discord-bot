@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
-const { getDatabase } = require('./func/connectDB');
+const { getDatabase, connectToDatabase } = require('./func/connectDB');
 
 // Function to format XP values
 function formatXPValue(xp) {
@@ -22,6 +22,7 @@ module.exports = {
       .setDescription('See who is in the top 10 Leaderboard'),
    async execute(interaction) {
       try {
+         await connectToDatabase();
          const database = await getDatabase();
          const users = database.collection('users');
 

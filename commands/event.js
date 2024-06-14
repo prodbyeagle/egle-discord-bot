@@ -12,7 +12,6 @@ module.exports = {
       try {
          client = await connectToDatabase();
          const database = await getDatabase(client);
-         const events = database.collection('events');
 
          const activeEvent = await getActiveEvent(client);
 

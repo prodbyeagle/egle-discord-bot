@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
-const { getDatabase } = require('./func/connectDB');
+const { getDatabase, connectToDatabase } = require('./func/connectDB');
 const { logError } = require('./func/error');
 
 module.exports = {
@@ -16,6 +16,7 @@ module.exports = {
       const member = interaction.options.getMember('member');
 
       try {
+         await connectToDatabase();
          const database = await getDatabase();
          const users = database.collection('users');
 

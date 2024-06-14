@@ -1,8 +1,9 @@
-const { getDatabase } = require('../func/connectDB');
+const { getDatabase, connectToDatabase } = require('../func/connectDB');
 
 async function checkEventTime() {
    let database;
    try {
+      await connectToDatabase();
       database = await getDatabase();
       const events = database.collection('events');
 
@@ -17,16 +18,20 @@ async function checkEventTime() {
             await events.updateOne({ _id: activeEvent._id }, { $set: { active: false } });
             console.log(`Event ${activeEvent.name} has ended and status updated.`);
          } else {
-            // event still on
+            console.log(`Event ${activeEvent.name} is still active.`);
          }
       } else {
-            //no events
+         console.log('No active events found.');
       }
    } catch (error) {
       console.error('Error checking event time:', error);
    } finally {
       if (database) {
-         await database.client.close();
+         try {
+            await database.client.close();
+         } catch (error) {
+            console.error('Error closing database connection:', error);
+         }
       }
    }
 }

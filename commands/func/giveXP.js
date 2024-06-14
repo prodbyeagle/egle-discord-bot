@@ -1,8 +1,9 @@
-const { getDatabase } = require('../func/connectDB');
+const { getDatabase, connectToDatabase } = require('../func/connectDB');
 const { addXP } = require('./addXP');
 
 async function getUserByUsername(username) {
    try {
+      await connectToDatabase();
       const database = await getDatabase();
       const users = database.collection('users');
 
@@ -17,6 +18,7 @@ async function getUserByUsername(username) {
 
 async function giveXP(username, xp_value) {
    try {
+      await connectToDatabase();
       const database = await getDatabase();
       const users = database.collection('users');
 

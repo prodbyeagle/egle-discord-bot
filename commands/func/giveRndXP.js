@@ -1,7 +1,8 @@
 require('dotenv').config();
-const { getDatabase } = require('./connectDB');
+const { getDatabase, connectToDatabase } = require('./connectDB');
 
 async function giveRndXP(numMembers, totalXP, guild) {
+   await connectToDatabase();
    const database = await getDatabase();
    const users = database.collection('users');
 

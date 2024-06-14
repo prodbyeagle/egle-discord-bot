@@ -1,8 +1,9 @@
 require('dotenv').config();
-const { getDatabase, getActiveEvent } = require('../func/connectDB');
+const { getDatabase, getActiveEvent, connectToDatabase } = require('../func/connectDB');
 
 async function addXP(userId, xp, username, member) {
    try {
+      await connectToDatabase();
       const database = await getDatabase();
       const users = database.collection('users');
 
