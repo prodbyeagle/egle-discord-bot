@@ -8,6 +8,7 @@ const { checkEventTime } = require('./commands/func/checkEventTime');
 const { sendLevelUpMessage } = require('./commands/func/sendLevelUpMessage');
 const { logCommand } = require('./commands/func/logging');
 const { logError } = require('./commands/func/error');
+const { connectToDatabase } = require('./commands/func/connectDB');
 
 const client = new Client({
    intents: [
@@ -30,6 +31,7 @@ client.once("ready", async () => {
    console.log(`🗝️  Logged in as ${client.user.tag}`);
    try {
       await checkEventTime();
+      await connectToDatabase();
 
       setInterval(async () => {
          try {
@@ -57,8 +59,19 @@ client.on('messageCreate', async message => {
    try {
       if (!message || !message.author || message.author.bot) return;
 
-      const member = message.guild ? message.guild.members.cache.get(message.author.id) : null;
+      let member;
+      if (message.guild) {
+         try {
+            member = await message.guild.members.fetch(message.author.id);
+         } catch (err) {
+            console.error(`Error fetching member: ${err}`);
+            return;
+         }
+      }
+
       const xpGained = 10;
+      console.log(`Adding XP to user ${message.author.id} (${message.author.username})`);
+
       const updatedUser = await addXP(message.author.id, xpGained, message.author.username, member);
 
       if (updatedUser) {
@@ -66,14 +79,17 @@ client.on('messageCreate', async message => {
          const previousXP = updatedUser.xp - Math.floor(xpGained * (updatedUser.level > 1 ? 1.1 ** (updatedUser.level - 1) : 1));
          const requiredXP = Math.floor(100 * 1.1 ** (newLevel - 1));
 
+         console.log(`User ${message.author.id} (${message.author.username}) - XP: ${updatedUser.xp}, Level: ${updatedUser.level}`);
+         console.log(`Previous XP: ${previousXP}, Required XP for level up: ${requiredXP}`);
+
          if (previousXP < requiredXP && updatedUser.xp >= requiredXP) {
+            console.log(`User ${message.author.id} (${message.author.username}) leveled up to ${newLevel}`);
             await sendLevelUpMessage(message.author, newLevel);
          }
       }
 
-
    } catch (error) {
-      console.error('Error adding XP or sending level up message:', error);
+      console.error('Error adding XP or sending level-up message:', error);
       await logError(client, error, 'messageCreate');
    }
 });
@@ -143,7 +159,7 @@ client.on('interactionCreate', async interaction => {
             await command.execute(interaction);
             await logCommand(client, interaction.commandName, interaction.user);
          } catch (error) {
-            await logError(client, error, `interactionCreate: Command ${interaction.commandName}`);
+            await logError(client, error, `Command ${interaction.commandName}`);
             await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
          }
       } else if (interaction.isAutocomplete()) {

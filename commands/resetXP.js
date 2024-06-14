@@ -1,9 +1,7 @@
+require('dotenv').config();
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
-const { MongoClient } = require('mongodb');
+const { getDatabase } = require('./func/connectDB');
 const { logError } = require('./func/error');
-
-const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri);
 
 module.exports = {
    data: new SlashCommandBuilder()
@@ -18,9 +16,7 @@ module.exports = {
       const member = interaction.options.getMember('member');
 
       try {
-         await client.connect();
-
-         const database = client.db('EGLEDB');
+         const database = await getDatabase();
          const users = database.collection('users');
 
          const result = await users.updateOne(
@@ -29,7 +25,7 @@ module.exports = {
          );
 
          const embed = new EmbedBuilder()
-            .setColor(0x7289DA)
+            .setColor('Blue')
             .setTitle(`🦅 XP Reset`)
             .setDescription(`Successfully reset XP for ${member.displayName}.`)
             .setTimestamp()
@@ -41,16 +37,15 @@ module.exports = {
 
          await interaction.reply({ embeds: [embed], ephemeral: true });
       } catch (error) {
+         console.error('Error resetting XP:', error);
          await logError(interaction.client, error, 'resetXP');
          const errorEmbed = new EmbedBuilder()
-            .setColor(0xFF0000)
+            .setColor('Red')
             .setTitle('Error')
             .setDescription('There was an error while resetting XP.')
             .setTimestamp()
             .setFooter({ text: '🦅 made by @prodbyeagle' });
          await interaction.reply({ embeds: [errorEmbed], ephemeral: true });
-      } finally {
-         await client.close();
       }
    },
 };

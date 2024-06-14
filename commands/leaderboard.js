@@ -1,9 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
-const { MongoClient } = require('mongodb');
-const { logError } = require('./func/error');
-
-const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri);
+const { getDatabase } = require('./func/connectDB');
 
 // Function to format XP values
 function formatXPValue(xp) {
@@ -26,8 +22,7 @@ module.exports = {
       .setDescription('See who is in the top 10 Leaderboard'),
    async execute(interaction) {
       try {
-         await client.connect();
-         const database = client.db('EGLEDB');
+         const database = await getDatabase();
          const users = database.collection('users');
 
          const topUsers = await users.find({ banned: { $ne: true } }).sort({ level: -1, xp: -1 }).limit(10).toArray();
@@ -73,10 +68,9 @@ module.exports = {
 
          await interaction.reply({ embeds: [embed], components: [actionRow], ephemeral: true });
       } catch (error) {
-         await logError(client, error, 'leaderboard');
          await interaction.reply({ content: 'Error fetching leaderboard.', ephemeral: true });
       } finally {
-         await client.close();
+         //nothing
       }
    },
 };

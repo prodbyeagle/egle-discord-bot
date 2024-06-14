@@ -1,6 +1,4 @@
-const { MongoClient } = require('mongodb');
-const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri);
+const { getDatabase } = require('../func/connectDB');
 
 function formatXPValue(xp) {
    if (xp >= 1e12) {
@@ -17,9 +15,9 @@ function formatXPValue(xp) {
 }
 
 async function getLeaderboard(period) {
+   let database;
    try {
-      await client.connect();
-      const database = client.db('EGLEDB');
+      database = await getDatabase();
       const users = database.collection('users');
 
       const now = new Date();
@@ -47,7 +45,6 @@ async function getLeaderboard(period) {
          { $limit: 10 }
       ]).toArray();
 
-      // Format XP values
       leaderboard.forEach(user => {
          user.totalXP = formatXPValue(user.totalXP);
       });
@@ -55,9 +52,9 @@ async function getLeaderboard(period) {
       return leaderboard;
    } catch (error) {
       console.error('Error fetching leaderboard:', error);
-      throw error; // Propagate error back to caller
+      throw error;
    } finally {
-      await client.close();
+      //nothing
    }
 }
 

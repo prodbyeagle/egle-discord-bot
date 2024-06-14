@@ -1,15 +1,11 @@
 require('dotenv').config();
-const { MongoClient } = require('mongodb');
-
-const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri);
+const { getDatabase } = require('./connectDB');
 
 async function giveRndXP(numMembers, totalXP, guild) {
-   try {
-      await client.connect();
+   const database = await getDatabase();
+   const users = database.collection('users');
 
-      const database = client.db('EGLEDB');
-      const users = database.collection('users');
+   try {
       const members = await guild.members.fetch();
       const nonBotMembers = Array.from(members.values()).filter(member => !member.user.bot);
 
@@ -46,7 +42,7 @@ async function giveRndXP(numMembers, totalXP, guild) {
          await users.updateOne({ userId }, { $set: { xp: user.xp, level: user.level } });
       }
    } finally {
-      await client.close();
+      // Die Verbindung wird in der connectDB-Funktion geschlossen
    }
 }
 

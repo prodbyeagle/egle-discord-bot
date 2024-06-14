@@ -1,23 +1,25 @@
-require('dotenv').config();
-const { MongoClient } = require('mongodb');
+const { getDatabase } = require('../func/connectDB');
 const { addXP } = require('./addXP');
 
-const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri);
-
 async function getUserByUsername(username) {
-   await client.connect();
+   try {
+      const database = await getDatabase();
+      const users = database.collection('users');
 
-   const database = client.db('EGLEDB');
-   const users = database.collection('users');
+      const user = await users.findOne({ username });
 
-   const user = await users.findOne({ username });
-
-   return user;
+      return user;
+   } catch (error) {
+      console.error('Error fetching user by username:', error);
+      throw error;
+   }
 }
 
 async function giveXP(username, xp_value) {
    try {
+      const database = await getDatabase();
+      const users = database.collection('users');
+
       const user = await getUserByUsername(username);
 
       if (!user) {
@@ -25,7 +27,7 @@ async function giveXP(username, xp_value) {
       }
 
       const userId = user.userId;
-      const member = null; // Assuming no member object is available here
+      const member = null;
 
       await addXP(userId, xp_value, username, member);
 
@@ -33,8 +35,6 @@ async function giveXP(username, xp_value) {
    } catch (error) {
       console.error('Error giving XP:', error);
       throw error;
-   } finally {
-      await client.close();
    }
 }
 

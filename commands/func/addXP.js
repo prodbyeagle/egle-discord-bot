@@ -1,23 +1,9 @@
 require('dotenv').config();
-const { MongoClient } = require('mongodb');
-const { logError } = require('./error');
-
-const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri);
-
-async function getActiveEvent() {
-   await client.connect();
-   const database = client.db('EGLEDB');
-   const events = database.collection('events');
-   const event = await events.findOne({ active: true });
-   return event;
-}
+const { getDatabase, getActiveEvent } = require('../func/connectDB');
 
 async function addXP(userId, xp, username, member) {
    try {
-      await client.connect();
-
-      const database = client.db('EGLEDB');
+      const database = await getDatabase();
       const users = database.collection('users');
 
       let user = await users.findOne({ userId });
@@ -29,7 +15,7 @@ async function addXP(userId, xp, username, member) {
          if (!user.username) {
             await users.updateOne({ userId }, { $set: { username: username } });
          }
-         return;
+         return null;
       } else if (!user.username) {
          await users.updateOne({ userId }, { $set: { username: username } });
       }
@@ -44,9 +30,7 @@ async function addXP(userId, xp, username, member) {
             }
          });
       } else {
-         const error = new Error('Member object is undefined or does not have roles property.');
-         console.error(error.message);
-         await logError(client, error, 'addXP');
+         console.error(`Member object or roles cache is undefined for user ${userId}`);
       }
 
       const now = new Date();
@@ -54,7 +38,7 @@ async function addXP(userId, xp, username, member) {
       if (isWeekend) {
          multiplier *= 1.1;
       } else {
-         console.log("not weekend yet");
+         console.log('Not weekend yet');
       }
 
       const activeEvent = await getActiveEvent();
@@ -81,11 +65,12 @@ async function addXP(userId, xp, username, member) {
             $push: { xpHistory: { xp: gainedXP, timestamp: now } }
          }
       );
+
+      return user;
+
    } catch (error) {
       console.error('Error adding XP:', error);
-      await logError(client, error, 'addXP');
-   } finally {
-      await client.close();
+      return null;
    }
 }
 

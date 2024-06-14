@@ -1,10 +1,7 @@
-const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
-const { MongoClient } = require('mongodb');
 require('dotenv').config();
+const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
+const { getDatabase } = require('../commands/func/connectDB');
 const { logError } = require('./func/error');
-
-const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri);
 
 module.exports = {
    data: new SlashCommandBuilder()
@@ -29,8 +26,7 @@ module.exports = {
             .setRequired(true)),
    async execute(interaction) {
       try {
-         await client.connect();
-         const database = client.db('EGLEDB');
+         const database = await getDatabase();
          const events = database.collection('events');
 
          const name = interaction.options.getString('name');
@@ -64,10 +60,9 @@ module.exports = {
 
          await interaction.reply({ embeds: [embed], ephemeral: true });
       } catch (error) {
-         await logError(client, error, 'create');
+         console.error('Error creating event:', error);
+         await logError(null, error, 'create'); // Null übergeben, da keine spezifische Client-Instanz verwendet wird
          await interaction.reply({ content: 'There was an error while creating the event.', ephemeral: true });
-      } finally {
-         await client.close();
       }
    }
 };

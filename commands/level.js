@@ -1,10 +1,7 @@
 require('dotenv').config();
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { MongoClient } = require('mongodb');
+const { getDatabase } = require('./func/connectDB');
 const { logError } = require('./func/error');
-
-const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri);
 
 module.exports = {
    data: new SlashCommandBuilder()
@@ -16,8 +13,7 @@ module.exports = {
             .setRequired(false)),
    async execute(interaction) {
       try {
-         await client.connect();
-         const database = client.db('EGLEDB');
+         const database = await getDatabase();
          const users = database.collection('users');
 
          const targetUser = interaction.options.getUser('user') || interaction.user;
@@ -31,7 +27,6 @@ module.exports = {
 
          if (user.banned) {
             await interaction.reply({ content: 'This user is banned from the leaderboard.', ephemeral: true });
-            await client.close();
             return;
          }
 
@@ -46,18 +41,16 @@ module.exports = {
             .setFooter({ text: '🦅 made by @prodbyeagle' });
 
          await interaction.reply({ embeds: [embed], ephemeral: true });
-         await client.close();
       } catch (error) {
          console.error('Error showing level:', error);
          await logError(interaction.client, error, 'level');
          const embed = new EmbedBuilder()
-            .setColor(0xFF0000)
+            .setColor('#FF0000')
             .setTitle('❌ Error')
             .setDescription('An error occurred while trying to retrieve the level.')
             .setTimestamp()
             .setFooter({ text: '🦅 made by @prodbyeagle' });
          await interaction.reply({ embeds: [embed], ephemeral: true });
-         await client.close();
       }
    }
 };

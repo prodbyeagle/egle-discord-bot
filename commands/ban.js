@@ -1,10 +1,7 @@
 require('dotenv').config();
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { MongoClient } = require('mongodb');
+const { getDatabase } = require('../commands/func/connectDB');
 const { logError } = require('./func/error');
-
-const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri);
 
 module.exports = {
    data: new SlashCommandBuilder()
@@ -17,8 +14,7 @@ module.exports = {
             .setRequired(true)),
    async execute(interaction) {
       try {
-         await client.connect();
-         const database = client.db('EGLEDB');
+         const database = await getDatabase();
          const users = database.collection('users');
 
          const targetUser = interaction.options.getUser('user');
@@ -35,8 +31,6 @@ module.exports = {
          console.error('Error banning user:', error);
          await logError(client, error, 'ban');
          await interaction.reply({ content: 'There was an error banning the user.', ephemeral: true });
-      } finally {
-         await client.close();
       }
    }
 };

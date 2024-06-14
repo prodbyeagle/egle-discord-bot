@@ -1,13 +1,9 @@
-const { MongoClient } = require('mongodb');
-require('dotenv').config();
-
-const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri);
+const { getDatabase } = require('../func/connectDB');
 
 async function checkEventTime() {
+   let database;
    try {
-      await client.connect();
-      const database = client.db('EGLEDB');
+      database = await getDatabase();
       const events = database.collection('events');
 
       const currentTime = new Date();
@@ -21,14 +17,17 @@ async function checkEventTime() {
             await events.updateOne({ _id: activeEvent._id }, { $set: { active: false } });
             console.log(`Event ${activeEvent.name} has ended and status updated.`);
          } else {
+            // event still on
          }
       } else {
-         console.log('No active event found.');
+            //no events
       }
    } catch (error) {
       console.error('Error checking event time:', error);
    } finally {
-      await client.close();
+      if (database) {
+         await database.client.close();
+      }
    }
 }
 
