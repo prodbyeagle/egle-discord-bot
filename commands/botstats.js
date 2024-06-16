@@ -23,15 +23,14 @@ module.exports = {
          .setTitle('🤖 Bot Statistics')
          .setColor('Blue')
          .addFields(
-            { name: 'Ping', value: `${ping} ms`, inline: true },
-            { name: 'Uptime', value: uptime, inline: true },
+            { name: 'Ping', value: `${ping} ms`, inline: false },
+            { name: 'Uptime', value: uptime, inline: false },
             { name: 'Server Count', value: `${client.guilds.cache.size}`, inline: true },
-            { name: 'User Count', value: `${client.users.cache.size}`, inline: true },
-            { name: 'Channel Count', value: `${client.channels.cache.size}`, inline: true }
+            { name: 'User Count', value: `${client.users.cache.size}`, inline: true }
          )
          .setTimestamp()
          .setFooter({ text: '🦅 made by @prodbyeagle' });
 
-      await interaction.reply({ embeds: [embed] });
+      await interaction.reply({ embeds: [embed], ephemeral: true });
    },
 };
