@@ -24,7 +24,10 @@ module.exports = {
 
          await interaction.channel.messages.fetch({ limit: 100 }).then(messages => {
             messages.forEach(msg => {
-               if ((!msg.pinned || pinnedOption) && (!excludedRole || !msg.member.roles.cache.has(excludedRole.id))) {
+               const twoWeeksAgo = Date.now() - 12096e5; // 12096e5 ms = 14 days
+               if (msg.createdTimestamp < twoWeeksAgo) {
+                  console.error(`Message ID ${msg.id} is older than 2 weeks and cannot be deleted.`);
+               } else if ((!msg.pinned || pinnedOption) && (!excludedRole || !msg.member.roles.cache.has(excludedRole.id))) {
                   messagesToDelete.push(msg);
                }
             });
@@ -33,20 +36,25 @@ module.exports = {
          const embed = new EmbedBuilder()
             .setColor(0x0099FF)
             .setTitle('Clear Messages')
-            .setDescription(`Messages cleared successfully! ${messagesToDelete.length} messages deleted.`)
             .setTimestamp()
             .setFooter({ text: '🦅 made by @prodbyeagle' });
 
          if (messagesToDelete.length > 0) {
-            await interaction.channel.bulkDelete(messagesToDelete);
+            try {
+               await interaction.channel.bulkDelete(messagesToDelete);
+               embed.setDescription(`Messages cleared successfully! ${messagesToDelete.length} messages deleted.`);
+            } catch (deleteError) {
+               embed.setDescription('Failed to delete messages. Some messages might be older than 2 weeks or there might be other issues.');
+               await logError(interaction.client, deleteError, 'bulkDelete messages');
+            }
          } else {
             embed.setDescription('No messages to delete.');
          }
 
          await interaction.reply({ embeds: [embed], ephemeral: true });
       } catch (error) {
-         await logError(client, error, 'clearMessages');
-         await interaction.reply({ content: 'There was an error while clearing messages.', ephemeral: true });
+         await logError(interaction.client, error, 'clearmessages command');
+         await interaction.reply({ content: `There was an error while clearing messages: ${error.message}`, ephemeral: true });
       }
    }
 };
