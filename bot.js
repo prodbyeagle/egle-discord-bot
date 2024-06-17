@@ -9,6 +9,7 @@ const { sendLevelUpMessage } = require('./commands/func/sendLevelUpMessage');
 const { logCommand } = require('./commands/func/logging');
 const { logError } = require('./commands/func/error');
 const { connectToDatabase } = require('./commands/func/connectDB');
+const { giveaways } = require('./commands/giveaway');
 
 const client = new Client({
    intents: [
@@ -94,6 +95,29 @@ client.on('interactionCreate', async interaction => {
    try {
       if (interaction.isButton()) {
          const customId = interaction.customId;
+
+         if (customId === 'enter_giveaway') {
+            const giveaway = [...giveaways.values()].find(g => g.messageId === interaction.message.id);
+
+            if (!giveaway) {
+               return interaction.reply({ content: 'This giveaway is no longer active.', ephemeral: true });
+            }
+
+            if (giveaway.participants.has(interaction.user.id)) {
+               return interaction.reply({ content: 'You have already entered this giveaway.', ephemeral: true });
+            }
+
+            giveaway.participants.add(interaction.user.id);
+
+            // Update the giveaway message with the new participants count
+            const message = await interaction.message.fetch();
+            const embed = EmbedBuilder.from(message.embeds[0]);
+            const enteredText = `Entered: ${giveaway.participants.size} users`;
+            embed.setDescription(embed.data.description.replace(/Entered: \d+ users/, enteredText));
+
+            await message.edit({ embeds: [embed] });
+            return interaction.reply({ content: 'You have been entered into the giveaway!', ephemeral: true });
+         }
 
          // Überprüfe, ob der Button für das Leaderboard ist
          if (customId === 'daily_leaderboard' || customId === 'weekly_leaderboard' || customId === 'monthly_leaderboard') {
