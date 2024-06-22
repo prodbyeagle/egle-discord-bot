@@ -11,6 +11,7 @@ const { logError } = require('./commands/func/error');
 const { connectToDatabase, saveGiveaways, loadGiveaways } = require('./commands/func/connectDB');
 const { giveaways } = require('./commands/giveaway');
 const { Modes, setBotPresence } = require('./commands/func/modes');
+const { debug } = require('./commands/func/debug');
 
 const client = new Client({
    intents: [
@@ -32,7 +33,7 @@ for (const file of commandFiles) {
 client.currentMode = Modes.ONLINE;
 
 client.once("ready", async () => {
-   console.log(`🗝️  Logged in as ${client.user.tag}`);
+   debug(`Logged in as ${client.user.tag}`, 'login');
    try {
       await connectToDatabase();
       await loadGiveaways(giveaways);
@@ -42,6 +43,7 @@ client.once("ready", async () => {
          try {
             await checkEventTime();
          } catch (error) {
+            debug('Error in setInterval checkEventTime', 'error');
             console.error('Error in setInterval checkEventTime:', error);
             await logError(client, error, 'setInterval checkEventTime');
          }
@@ -50,17 +52,20 @@ client.once("ready", async () => {
       await setBotPresence(client, Modes.ONLINE);
 
    } catch (error) {
+      debug('Error in ready event', 'error');
       console.error('Error in ready event:', error);
       await logError(client, error, 'ready event');
    }
 });
 
 process.on('SIGINT', async () => {
+   debug('SIGINT received', 'warn');
    try {
       await saveGiveaways(giveaways);
       await client.destroy();
       process.exit(0);
    } catch (error) {
+      debug('Error saving giveaways on SIGINT', 'error');
       console.error('Error saving giveaways on SIGINT:', error);
       process.exit(1);
    }
@@ -75,13 +80,13 @@ client.on('messageCreate', async message => {
          try {
             member = await message.guild.members.fetch(message.author.id);
          } catch (err) {
+            debug(`Error fetching member: ${err}`, 'error');
             console.error(`Error fetching member: ${err}`);
             return;
          }
       }
 
       const xpGained = 10;
-      console.log(`Adding XP to user ${message.author.id} (${message.author.username})`);
 
       const updatedUser = await addXP(message.author.id, xpGained, message.author.username, member);
 
@@ -96,6 +101,7 @@ client.on('messageCreate', async message => {
       }
 
    } catch (error) {
+      debug('Error adding XP or sending level-up message', 'error');
       console.error('Error adding XP or sending level-up message:', error);
       await logError(client, error, 'messageCreate');
    }
@@ -104,6 +110,7 @@ client.on('messageCreate', async message => {
 client.on('interactionCreate', async interaction => {
    try {
       if (interaction.isButton()) {
+         debug(`Button interaction received: ${interaction.customId}`, 'info');
 
          if (!interaction.client.db) {
             await connectToDatabase();
@@ -166,6 +173,7 @@ client.on('interactionCreate', async interaction => {
 
                await interaction.reply({ embeds: [embed], ephemeral: true });
             } catch (error) {
+               debug(`Error fetching leaderboard for ${period}`, 'error');
                await logError(client, error, `interactionCreate: Button ${interaction.customId}`);
                await interaction.reply({ content: 'Error fetching leaderboard.', ephemeral: true });
             }
@@ -183,19 +191,26 @@ client.on('interactionCreate', async interaction => {
                      break;
                }
             } catch (error) {
+               debug(`Error handling button interaction for ${customId}`, 'error');
                await logError(client, error, `interactionCreate: Button ${interaction.customId}`);
             }
          }
       }
 
       if (interaction.isCommand()) {
+         debug(`Command interaction received: ${interaction.commandName}`, 'info');
+
          if (client.currentMode === Modes.MAINTENANCE) {
             const member = interaction.guild.members.cache.get(interaction.user.id);
             if (!member.roles.cache.some(role => role.id === '1243678221703053323')) {
-               return interaction.reply({
-                  content: 'Bot is currently disabled. Visit https://ptb.discord.com/channels/1243677713466916904/1243680799891525652 for more info.',
-                  ephemeral: true
-               });
+               const maintenanceEmbed = new EmbedBuilder()
+                  .setTitle('Bot Maintenance')
+                  .setColor('Red')
+                  .setDescription('Bot is currently disabled. Please visit https://ptb.discord.com/channels/1243677713466916904/1243680799891525652 for more information.')
+                  .setTimestamp()
+                  .setFooter({ text: '🦅 made by @prodbyeagle' });
+
+               return interaction.reply({ embeds: [maintenanceEmbed], ephemeral: true });
             }
          }
 
@@ -207,6 +222,7 @@ client.on('interactionCreate', async interaction => {
             await command.execute(interaction);
             await logCommand(client, interaction.commandName, interaction.user);
          } catch (error) {
+            debug(`Error executing command ${interaction.commandName}`, 'error');
             await logError(client, error, `Command ${interaction.commandName}`);
             await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
          }
@@ -221,6 +237,7 @@ client.on('interactionCreate', async interaction => {
                const mutedRole = await guild.roles.fetch(mutedRoleId);
 
                if (!mutedRole) {
+                  debug(`Role with ID ${mutedRoleId} not found.`, 'error');
                   console.error(`Role with ID ${mutedRoleId} not found.`);
                   return;
                }
@@ -234,6 +251,7 @@ client.on('interactionCreate', async interaction => {
 
                await interaction.respond(membersWithMutedRole.slice(0, 25));
             } catch (error) {
+               debug(`Error fetching muted role members for ${interaction.commandName}`, 'error');
                await logError(client, error, 'interactionCreate: Autocomplete unjail search');
             }
          }
@@ -245,12 +263,14 @@ client.on('interactionCreate', async interaction => {
                await handleReasonModalSubmit(interaction);
             }
          } catch (error) {
+            debug(`Error handling modal submit for ${interaction.customId}`, 'error');
             await logError(client, error, `interactionCreate: ModalSubmit ${interaction.customId}`);
          }
       }
    } catch (error) {
+      debug('Error in interactionCreate event', 'error');
       await logError(client, error, 'interactionCreate event');
    }
 });
 
-client.login(process.env.DISCORD_TOKEN)
+client.login(process.env.DISCORD_TOKEN);

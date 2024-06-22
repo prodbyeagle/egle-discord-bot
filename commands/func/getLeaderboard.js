@@ -1,4 +1,6 @@
+require('dotenv').config();
 const { getDatabase } = require('../func/connectDB');
+const { debug } = require('../func/debug');
 
 function formatXPValue(xp) {
    if (xp >= 1e12) {
@@ -17,6 +19,7 @@ function formatXPValue(xp) {
 async function getLeaderboard(period) {
    let database;
    try {
+      debug(`Fetching ${period} leaderboard`, 'info');
       database = await getDatabase();
       const users = database.collection('users');
 
@@ -49,12 +52,12 @@ async function getLeaderboard(period) {
          user.totalXP = formatXPValue(user.totalXP);
       });
 
+      debug(`Fetched ${leaderboard.length} entries for ${period} leaderboard`, 'info');
       return leaderboard;
    } catch (error) {
+      debug(`Error fetching ${period} leaderboard: ${error.message}`, 'error');
       console.error('Error fetching leaderboard:', error);
       throw error;
-   } finally {
-      //nothing
    }
 }
 

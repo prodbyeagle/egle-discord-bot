@@ -1,8 +1,10 @@
 require('dotenv').config();
 const { getDatabase, getActiveEvent, connectToDatabase } = require('../func/connectDB');
+const { debug } = require('../func/debug');
 
 async function addXP(userId, xp, username, member) {
    try {
+      debug(`Connecting to database for user ${userId}`, 'info');
       await connectToDatabase();
       const database = await getDatabase();
       const users = database.collection('users');
@@ -12,7 +14,9 @@ async function addXP(userId, xp, username, member) {
       if (!user) {
          user = { userId, username: username, xp: 0, level: 0, banned: false, xpHistory: [] };
          await users.insertOne(user);
+         debug(`New user created: ${username} (${userId})`, 'info');
       } else if (user.banned) {
+         debug(`User ${username} (${userId}) is banned`, 'warn');
          if (!user.username) {
             await users.updateOne({ userId }, { $set: { username: username } });
          }
@@ -31,20 +35,22 @@ async function addXP(userId, xp, username, member) {
             }
          });
       } else {
-         console.error(`Member object or roles cache is undefined for user ${userId}`);
+         debug(`Member object or roles cache is undefined for user ${userId}`, 'error');
       }
 
       const now = new Date();
       const isWeekend = (now.getDay() === 6) || (now.getDay() === 0);
       if (isWeekend) {
          multiplier *= 1.1;
+         debug(`Weekend multiplier applied for user ${userId}`, 'info');
       } else {
-         console.log('Not weekend yet');
+         debug(`Not weekend yet for user ${userId}`, 'info');
       }
 
       const activeEvent = await getActiveEvent();
       if (activeEvent) {
          multiplier *= activeEvent.multiplier;
+         debug(`Active event multiplier applied for user ${userId}`, 'info');
       }
 
       const gainedXP = Math.floor(xp * multiplier);
@@ -55,6 +61,7 @@ async function addXP(userId, xp, username, member) {
          user.level += 1;
          user.xp -= requiredXP;
          requiredXP = Math.floor(100 * Math.pow(1.1, user.level));
+         debug(`User ${userId} leveled up to ${user.level}`, 'info');
       }
 
       user.xp = Math.floor(user.xp);
@@ -67,9 +74,11 @@ async function addXP(userId, xp, username, member) {
          }
       );
 
+      debug(`XP updated for user ${userId}: ${gainedXP} XP gained`, 'info');
       return user;
 
    } catch (error) {
+      debug(`Error adding XP for user ${userId}: ${error.message}`, 'error');
       console.error('Error adding XP:', error);
       return null;
    }

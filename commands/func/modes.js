@@ -8,13 +8,23 @@ const Modes = {
 
 async function setBotPresence(client, mode) {
    switch (mode) {
+      case Modes.DEBUG:
+         await client.user.setPresence({
+            status: 'idle',
+            activities: [{
+               type: ActivityType.Custom,
+               name: "DEBUG Mode",
+               state: "🔧 Debug"
+            }]
+         });
+         break;
       case Modes.MAINTENANCE:
          await client.user.setPresence({
             status: 'idle',
             activities: [{
                type: ActivityType.Custom,
                name: "Maintenance Mode",
-               state: "🔧 Maintenance"
+               state: "💔 Maintenance"
             }]
          });
          break;

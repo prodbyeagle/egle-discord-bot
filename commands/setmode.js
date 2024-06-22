@@ -16,6 +16,7 @@ module.exports = {
             .setDescription('Choose the bot mode')
             .setRequired(true)
             .addChoices([
+               { name: 'Debug Mode', value: Modes.DEBUG },
                { name: 'Maintenance Mode', value: Modes.MAINTENANCE },
                { name: 'Online Mode', value: Modes.ONLINE },
             ])

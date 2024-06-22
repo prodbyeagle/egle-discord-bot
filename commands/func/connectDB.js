@@ -1,13 +1,17 @@
 require('dotenv').config();
 const { MongoClient } = require('mongodb');
+const { debug } = require('../func/debug');
 
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri);
 
 async function connectToDatabase() {
    try {
+      debug('Connecting to MongoDB...', 'info');
       await client.connect();
+      debug('Connected to MongoDB', 'info');
    } catch (error) {
+      debug(`Error connecting to MongoDB: ${error.message}`, 'error');
       console.error('Error connecting to MongoDB:', error);
       process.exit(1);
    }
@@ -21,6 +25,11 @@ async function getActiveEvent() {
    const database = client.db('EGLEDB');
    const events = database.collection('events');
    const event = await events.findOne({ active: true });
+   if (event) {
+      debug(`Active event found: ${event.name}`, 'info');
+   } else {
+      debug('No active event found', 'info');
+   }
    return event;
 }
 
@@ -37,6 +46,7 @@ async function saveGiveaways(giveawaysMap) {
    }));
 
    await collection.insertMany(giveawayArray);
+   debug('Giveaways saved to database', 'info');
 }
 
 async function loadGiveaways() {
@@ -54,6 +64,7 @@ async function loadGiveaways() {
       }
    ]));
 
+   debug('Giveaways loaded from database', 'info');
    return giveawaysMap;
 }
 
@@ -67,6 +78,7 @@ async function clearEndedGiveaways() {
    } else {
       await collection.deleteMany({});
    }
+   debug('Ended giveaways cleared from database', 'info');
 }
 
 module.exports = { connectToDatabase, getActiveEvent, getDatabase, saveGiveaways, loadGiveaways, clearEndedGiveaways };
