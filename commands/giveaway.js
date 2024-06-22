@@ -5,6 +5,7 @@ const { saveGiveaways, connectToDatabase, clearEndedGiveaways } = require('./fun
 
 const giveaways = new Map();
 const GIVEAWAY_CHANNEL_ID = '1243704233757380738';
+const GIVEAWAY_ROLE_ID = '1254137408191070340';
 
 module.exports = {
    data: new SlashCommandBuilder()
@@ -73,7 +74,11 @@ module.exports = {
                );
 
             const giveawayChannel = await interaction.client.channels.fetch(GIVEAWAY_CHANNEL_ID);
-            const message = await giveawayChannel.send({ embeds: [embed], components: [row] });
+            const message = await giveawayChannel.send({
+               content: `<@&${GIVEAWAY_ROLE_ID}>`,
+               embeds: [embed],
+               components: [row]
+            });
 
             giveaways.set(message.id, { prize, endTime, participants: new Set(), winnersCount, messageId: message.id });
 
