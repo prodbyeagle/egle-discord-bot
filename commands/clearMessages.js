@@ -15,11 +15,17 @@ module.exports = {
          option.setName('exclude_role')
             .setDescription('Exclude role from message clearing')
             .setRequired(false)
+      )
+      .addUserOption(option =>
+         option.setName('target_user')
+            .setDescription('Clear messages from a specific user')
+            .setRequired(false)
       ),
    async execute(interaction) {
       try {
          const pinnedOption = interaction.options.getBoolean('delete_pinned_messages');
          const excludedRole = interaction.options.getRole('exclude_role');
+         const targetUser = interaction.options.getUser('target_user');
          let messagesToDelete = [];
 
          await interaction.channel.messages.fetch({ limit: 100 }).then(messages => {
@@ -27,7 +33,11 @@ module.exports = {
                const twoWeeksAgo = Date.now() - 12096e5; // 12096e5 ms = 14 days
                if (msg.createdTimestamp < twoWeeksAgo) {
                   console.error(`Message ID ${msg.id} is older than 2 weeks and cannot be deleted.`);
-               } else if ((!msg.pinned || pinnedOption) && (!excludedRole || !msg.member.roles.cache.has(excludedRole.id))) {
+               } else if (
+                  (!msg.pinned || pinnedOption) &&
+                  (!excludedRole || !msg.member.roles.cache.has(excludedRole.id)) &&
+                  (!targetUser || msg.author.id === targetUser.id)
+               ) {
                   messagesToDelete.push(msg);
                }
             });
