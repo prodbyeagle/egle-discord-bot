@@ -1,17 +1,17 @@
-require('dotenv').config();
-const { Client, GatewayIntentBits, Collection, EmbedBuilder } = require('discord.js');
 const fs = require('fs');
+require('dotenv').config();
+const { debug } = require('./commands/func/debug');
 const { addXP } = require('./commands/func/addXP');
+const { giveaways } = require('./commands/giveaway');
+const { logError } = require('./commands/func/error');
+const { logCommand } = require('./commands/func/logging');
+const { Modes, setBotPresence } = require('./commands/func/modes');
 const { getLeaderboard } = require('./commands/func/getLeaderboard');
-const { handleButtonInteraction, handleReasonModalSubmit, handleApplicationModalSubmit } = require('./commands/func/application_modal');
 const { checkEventTime } = require('./commands/func/checkEventTime');
 const { sendLevelUpMessage } = require('./commands/func/sendLevelUpMessage');
-const { logCommand } = require('./commands/func/logging');
-const { logError } = require('./commands/func/error');
+const { Client, GatewayIntentBits, Collection, EmbedBuilder } = require('discord.js');
 const { connectToDatabase, saveGiveaways, loadGiveaways, saveActiveEvent, getActiveEvent } = require('./commands/func/connectDB');
-const { giveaways } = require('./commands/giveaway');
-const { Modes, setBotPresence } = require('./commands/func/modes');
-const { debug } = require('./commands/func/debug');
+const { handleButtonInteraction, handleReasonModalSubmit, handleApplicationModalSubmit } = require('./commands/func/application_modal');
 
 global.client = new Client({
    intents: [
@@ -35,9 +35,8 @@ client.currentMode = Modes.ONLINE;
 client.once('ready', async () => {
    debug(`Logged in as ${client.user.tag}`, 'login');
    try {
-      await connectToDatabase(); // Stellt sicher, dass die Verbindung zur Datenbank besteht
+      await connectToDatabase();
 
-      // Laden Sie das aktive Event und speichern Sie es
       const activeEvent = await getActiveEvent();
       if (activeEvent) {
          await saveActiveEvent(activeEvent);
@@ -45,10 +44,9 @@ client.once('ready', async () => {
          console.log('No active event found.');
       }
 
-      await loadGiveaways(giveaways); // Laden Sie Giveaways
-      await checkEventTime(); // Überprüfen Sie die Event-Zeit
+      await loadGiveaways(giveaways);
+      await checkEventTime();
 
-      // Setzen Sie ein Intervall für die Event-Zeit-Überprüfung
       setInterval(async () => {
          try {
             await checkEventTime();
@@ -59,7 +57,7 @@ client.once('ready', async () => {
          }
       }, 60000);
 
-      await setBotPresence(client, Modes.ONLINE); // Setzen Sie den Bot-Status
+      await setBotPresence(client, Modes.ONLINE);
 
    } catch (error) {
       debug('Error in ready event', 'error');
