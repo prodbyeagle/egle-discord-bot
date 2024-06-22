@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, Collection, ActivityType, EmbedBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, Collection, EmbedBuilder } = require('discord.js');
 const fs = require('fs');
 const { addXP } = require('./commands/func/addXP');
 const { getLeaderboard } = require('./commands/func/getLeaderboard');
@@ -10,6 +10,7 @@ const { logCommand } = require('./commands/func/logging');
 const { logError } = require('./commands/func/error');
 const { connectToDatabase, saveGiveaways, loadGiveaways } = require('./commands/func/connectDB');
 const { giveaways } = require('./commands/giveaway');
+const { Modes, setBotPresence } = require('./commands/func/modes');
 
 const client = new Client({
    intents: [
@@ -28,6 +29,8 @@ for (const file of commandFiles) {
    client.commands.set(command.data.name, command);
 }
 
+client.currentMode = Modes.ONLINE;
+
 client.once("ready", async () => {
    console.log(`🗝️  Logged in as ${client.user.tag}`);
    try {
@@ -44,13 +47,8 @@ client.once("ready", async () => {
          }
       }, 60000);
 
-      client.user.setPresence({
-         activities: [{
-            type: ActivityType.Custom,
-            name: "egle_presence",
-            state: "🦅 EGLE"
-         }]
-      });
+      await setBotPresence(client, Modes.ONLINE);
+
    } catch (error) {
       console.error('Error in ready event:', error);
       await logError(client, error, 'ready event');
@@ -191,6 +189,16 @@ client.on('interactionCreate', async interaction => {
       }
 
       if (interaction.isCommand()) {
+         if (client.currentMode === Modes.MAINTENANCE) {
+            const member = interaction.guild.members.cache.get(interaction.user.id);
+            if (!member.roles.cache.some(role => role.id === '1243678221703053323')) {
+               return interaction.reply({
+                  content: 'Bot is currently disabled. Visit https://ptb.discord.com/channels/1243677713466916904/1243680799891525652 for more info.',
+                  ephemeral: true
+               });
+            }
+         }
+
          const command = client.commands.get(interaction.commandName);
 
          if (!command) return;
