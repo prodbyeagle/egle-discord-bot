@@ -13,7 +13,7 @@ const { giveaways } = require('./commands/giveaway');
 const { Modes, setBotPresence } = require('./commands/func/modes');
 const { debug } = require('./commands/func/debug');
 
-const client = new Client({
+global.client = new Client({
    intents: [
       GatewayIntentBits.Guilds,
       GatewayIntentBits.GuildMessages,
