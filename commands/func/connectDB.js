@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
 const { debug } = require('../func/debug');
 
 const uri = process.env.MONGODB_URI;
@@ -7,9 +7,9 @@ const client = new MongoClient(uri);
 
 async function connectToDatabase() {
    try {
-      debug('Connecting to MongoDB...', 'info');
+      // debug('Connecting to MongoDB...', 'info');
       await client.connect();
-      debug('Connected to MongoDB', 'info');
+      // debug('Connected to MongoDB', 'info');
    } catch (error) {
       debug(`Error connecting to MongoDB: ${error.message}`, 'error');
       console.error('Error connecting to MongoDB:', error);
@@ -31,6 +31,26 @@ async function getActiveEvent() {
       debug('No active event found', 'info');
    }
    return event;
+}
+
+async function saveActiveEvent(activeEvent) {
+   const database = await getDatabase();
+   const events = database.collection('events');
+
+   const newEventId = new ObjectId();
+
+   try {
+      await events.insertOne({ ...activeEvent, _id: newEventId });
+
+      debug(`Active event saved: ${activeEvent.name}`, 'info');
+      debug('Other Events Cleared', 'info');
+
+      await events.deleteMany({ _id: { $ne: newEventId } });
+   } catch (error) {
+      debug('Error saving active event', 'error');
+      console.error('Error saving active event:', error);
+      throw error;
+   }
 }
 
 async function saveGiveaways(giveawaysMap) {
@@ -81,4 +101,4 @@ async function clearEndedGiveaways() {
    debug('Ended giveaways cleared from database', 'info');
 }
 
-module.exports = { connectToDatabase, getActiveEvent, getDatabase, saveGiveaways, loadGiveaways, clearEndedGiveaways };
+module.exports = { connectToDatabase, getActiveEvent, saveActiveEvent, getDatabase, saveGiveaways, loadGiveaways, clearEndedGiveaways };

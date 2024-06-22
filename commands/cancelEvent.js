@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { getDatabase, connectToDatabase } = require('../commands/func/connectDB');
+const { getDatabase, connectToDatabase, saveActiveEvent } = require('../commands/func/connectDB');
 const { logError } = require('./func/error');
 
 module.exports = {
@@ -19,7 +19,8 @@ module.exports = {
          if (!activeEvent) {
             await interaction.reply({ content: 'There is no active event to cancel.', ephemeral: true });
          } else {
-            await events.updateOne({ _id: activeEvent._id }, { $set: { active: false } });
+            await events.updateOne({ _id: activeEvent._id }, { $set: { active: false } })
+            await saveActiveEvent(activeEvent);
             await interaction.reply({ content: `Event "${activeEvent.name}" has been cancelled.`, ephemeral: true });
          }
       } catch (error) {

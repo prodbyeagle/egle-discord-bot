@@ -8,7 +8,7 @@ const { checkEventTime } = require('./commands/func/checkEventTime');
 const { sendLevelUpMessage } = require('./commands/func/sendLevelUpMessage');
 const { logCommand } = require('./commands/func/logging');
 const { logError } = require('./commands/func/error');
-const { connectToDatabase, saveGiveaways, loadGiveaways } = require('./commands/func/connectDB');
+const { connectToDatabase, saveGiveaways, loadGiveaways, saveActiveEvent, getActiveEvent } = require('./commands/func/connectDB');
 const { giveaways } = require('./commands/giveaway');
 const { Modes, setBotPresence } = require('./commands/func/modes');
 const { debug } = require('./commands/func/debug');
@@ -32,13 +32,23 @@ for (const file of commandFiles) {
 
 client.currentMode = Modes.ONLINE;
 
-client.once("ready", async () => {
+client.once('ready', async () => {
    debug(`Logged in as ${client.user.tag}`, 'login');
    try {
-      await connectToDatabase();
-      await loadGiveaways(giveaways);
-      await checkEventTime();
+      await connectToDatabase(); // Stellt sicher, dass die Verbindung zur Datenbank besteht
 
+      // Laden Sie das aktive Event und speichern Sie es
+      const activeEvent = await getActiveEvent();
+      if (activeEvent) {
+         await saveActiveEvent(activeEvent);
+      } else {
+         console.log('No active event found.');
+      }
+
+      await loadGiveaways(giveaways); // Laden Sie Giveaways
+      await checkEventTime(); // Überprüfen Sie die Event-Zeit
+
+      // Setzen Sie ein Intervall für die Event-Zeit-Überprüfung
       setInterval(async () => {
          try {
             await checkEventTime();
@@ -49,7 +59,7 @@ client.once("ready", async () => {
          }
       }, 60000);
 
-      await setBotPresence(client, Modes.ONLINE);
+      await setBotPresence(client, Modes.ONLINE); // Setzen Sie den Bot-Status
 
    } catch (error) {
       debug('Error in ready event', 'error');
@@ -57,6 +67,7 @@ client.once("ready", async () => {
       await logError(client, error, 'ready event');
    }
 });
+
 
 process.on('SIGINT', async () => {
    debug('SIGINT received', 'warn');
