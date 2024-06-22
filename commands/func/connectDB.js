@@ -17,6 +17,13 @@ async function getDatabase() {
    return client.db('EGLEDB');
 }
 
+async function getActiveEvent() {
+   const database = client.db('EGLEDB');
+   const events = database.collection('events');
+   const event = await events.findOne({ active: true });
+   return event;
+}
+
 async function saveGiveaways(giveawaysMap) {
    const database = await getDatabase();
    const collection = database.collection('giveaways');
@@ -62,4 +69,4 @@ async function clearEndedGiveaways() {
    }
 }
 
-module.exports = { connectToDatabase, getDatabase, saveGiveaways, loadGiveaways, clearEndedGiveaways };
+module.exports = { connectToDatabase, getActiveEvent, getDatabase, saveGiveaways, loadGiveaways, clearEndedGiveaways };
