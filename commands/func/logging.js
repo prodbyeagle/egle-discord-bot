@@ -1,9 +1,8 @@
 const { EmbedBuilder } = require('discord.js');
 
 async function logCommand(client, command, user) {
-   const logChannelId = '1250827063158378518'; // ID des Log-Channels
+   const logChannelId = '1250827063158378518';
 
-   // Check if the user ID matches the one to be excluded
    if (user.id === '893759402832699392') {
       return;
    }

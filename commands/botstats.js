@@ -8,7 +8,6 @@ module.exports = {
   async execute(interaction) {
     const client = interaction.client;
 
-    // Berechne die Uptime
     const totalSeconds = client.uptime / 1000;
     const days = Math.floor(totalSeconds / 86400);
     const hours = Math.floor(totalSeconds / 3600) % 24;
