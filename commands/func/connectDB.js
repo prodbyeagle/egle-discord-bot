@@ -17,11 +17,49 @@ async function getDatabase() {
    return client.db('EGLEDB');
 }
 
-async function getActiveEvent() {
-   const database = client.db('EGLEDB');
-   const events = database.collection('events');
-   const event = await events.findOne({ active: true });
-   return event;
+async function saveGiveaways(giveawaysMap) {
+   const database = await getDatabase();
+   const collection = database.collection('giveaways');
+
+   await collection.deleteMany({});
+
+   const giveawayArray = [...giveawaysMap.entries()].map(([id, giveaway]) => ({
+      messageId: id,
+      ...giveaway,
+      participants: [...giveaway.participants],
+   }));
+
+   await collection.insertMany(giveawayArray);
 }
 
-module.exports = { connectToDatabase, getDatabase, getActiveEvent };
+async function loadGiveaways() {
+   const database = await getDatabase();
+   const collection = database.collection('giveaways');
+   const giveawayArray = await collection.find({}).toArray();
+   const giveawaysMap = new Map(giveawayArray.map(giveaway => [
+      giveaway.messageId,
+      {
+         prize: giveaway.prize,
+         endTime: giveaway.endTime,
+         participants: new Set(giveaway.participants),
+         winnersCount: giveaway.winnersCount,
+         messageId: giveaway.messageId
+      }
+   ]));
+
+   return giveawaysMap;
+}
+
+async function clearEndedGiveaways() {
+   const database = await getDatabase();
+   const collection = database.collection('giveaways');
+   const latestActiveGiveaway = [...giveaways.entries()].find(g => g.endTime > Date.now());
+
+   if (latestActiveGiveaway) {
+      await collection.deleteMany({ messageId: { $ne: latestActiveGiveaway.messageId } });
+   } else {
+      await collection.deleteMany({});
+   }
+}
+
+module.exports = { connectToDatabase, getDatabase, saveGiveaways, loadGiveaways, clearEndedGiveaways };

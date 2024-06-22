@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { setTimeout } = require('timers/promises');
 const { logError } = require('./func/error');
+const { saveGiveaways, connectToDatabase, clearEndedGiveaways } = require('./func/connectDB');
 
 const giveaways = new Map();
 const GIVEAWAY_CHANNEL_ID = '1243704233757380738';
@@ -44,6 +45,10 @@ module.exports = {
       try {
          const subcommand = interaction.options.getSubcommand();
 
+         if (!interaction.client.db) {
+            await connectToDatabase();
+         }
+
          if (subcommand === 'start') {
             const prize = interaction.options.getString('prize');
             const duration = interaction.options.getInteger('duration');
@@ -54,8 +59,8 @@ module.exports = {
 
             const embed = new EmbedBuilder()
                .setTitle('🎉 New Giveaway! 🎉')
-               .setDescription(`Prize: **${prize}**\nNumber of winners: **${winnersCount}**\nClick the button to enter!\nEnds <t:${endTimestamp}:R>.\nEntered: 0 users`)
-               .setColor('Green')
+               .setDescription(`Prize: **${prize}**\nNumber of winners: **${winnersCount}**\nEnds <t:${endTimestamp}:R>.\nEntered: 0 users`)
+               .setColor('Yellow')
                .setTimestamp(endTime)
                .setFooter({ text: '🦅 made by @prodbyeagle' });
 
@@ -63,7 +68,7 @@ module.exports = {
                .addComponents(
                   new ButtonBuilder()
                      .setCustomId('enter_giveaway')
-                     .setLabel('Enter Giveaway')
+                     .setLabel(`Giveaway ${prize}`)
                      .setStyle(ButtonStyle.Primary)
                );
 
@@ -72,9 +77,9 @@ module.exports = {
 
             giveaways.set(message.id, { prize, endTime, participants: new Set(), winnersCount, messageId: message.id });
 
+            await saveGiveaways(giveaways);
             await interaction.reply({ content: `Giveaway started in <#${GIVEAWAY_CHANNEL_ID}>`, ephemeral: true });
 
-            // Automatisches Ende des Giveaways nach der angegebenen Zeit
             await setTimeout(duration * 60000);
             await endGiveaway(message.id, interaction.client);
 
@@ -86,6 +91,7 @@ module.exports = {
             }
 
             activeGiveaway.participants.add(interaction.user.id);
+            await saveGiveaways(giveaways);
             return interaction.reply({ content: 'You have been entered into the giveaway!', ephemeral: true });
 
          } else if (subcommand === 'end') {
@@ -96,6 +102,7 @@ module.exports = {
             }
 
             await endGiveaway(activeGiveaway.messageId, interaction.client);
+            await saveGiveaways(giveaways);
             return interaction.reply({ content: 'The giveaway has been ended and winners have been selected.', ephemeral: true });
          }
       } catch (error) {
@@ -103,7 +110,7 @@ module.exports = {
          await interaction.reply({ content: `There was an error while executing the command: ${error.message}`, ephemeral: true });
       }
    },
-   giveaways // Exportiere die Map
+   giveaways
 };
 
 async function endGiveaway(messageId, client) {
@@ -125,6 +132,8 @@ async function endGiveaway(messageId, client) {
          await message.edit({ embeds: [embed], components: [] });
 
          giveaways.delete(messageId);
+         await clearEndedGiveaways();
+         await saveGiveaways(giveaways);
          return;
       }
 
@@ -151,6 +160,7 @@ async function endGiveaway(messageId, client) {
       await message.react('👎');
 
       giveaways.delete(messageId);
+      await saveGiveaways(giveaways);
    } catch (error) {
       await logError(client, error, `Error ending giveaway with message ID: ${messageId}`);
    }

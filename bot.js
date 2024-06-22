@@ -8,7 +8,7 @@ const { checkEventTime } = require('./commands/func/checkEventTime');
 const { sendLevelUpMessage } = require('./commands/func/sendLevelUpMessage');
 const { logCommand } = require('./commands/func/logging');
 const { logError } = require('./commands/func/error');
-const { connectToDatabase } = require('./commands/func/connectDB');
+const { connectToDatabase, saveGiveaways, loadGiveaways } = require('./commands/func/connectDB');
 const { giveaways } = require('./commands/giveaway');
 
 const client = new Client({
@@ -32,6 +32,7 @@ client.once("ready", async () => {
    console.log(`🗝️  Logged in as ${client.user.tag}`);
    try {
       await connectToDatabase();
+      await loadGiveaways(giveaways);
       await checkEventTime();
 
       setInterval(async () => {
@@ -53,6 +54,17 @@ client.once("ready", async () => {
    } catch (error) {
       console.error('Error in ready event:', error);
       await logError(client, error, 'ready event');
+   }
+});
+
+process.on('SIGINT', async () => {
+   try {
+      await saveGiveaways(giveaways);
+      await client.destroy();
+      process.exit(0);
+   } catch (error) {
+      console.error('Error saving giveaways on SIGINT:', error);
+      process.exit(1);
    }
 });
 
@@ -94,6 +106,11 @@ client.on('messageCreate', async message => {
 client.on('interactionCreate', async interaction => {
    try {
       if (interaction.isButton()) {
+
+         if (!interaction.client.db) {
+            await connectToDatabase();
+         }
+
          const customId = interaction.customId;
 
          if (customId === 'enter_giveaway') {
@@ -103,23 +120,26 @@ client.on('interactionCreate', async interaction => {
                return interaction.reply({ content: 'This giveaway is no longer active.', ephemeral: true });
             }
 
+            let responseMessage;
             if (giveaway.participants.has(interaction.user.id)) {
-               return interaction.reply({ content: 'You have already entered this giveaway.', ephemeral: true });
+               giveaway.participants.delete(interaction.user.id);
+               responseMessage = 'You have left the giveaway.';
+            } else {
+               giveaway.participants.add(interaction.user.id);
+               responseMessage = 'You have been entered into the giveaway!';
             }
 
-            giveaway.participants.add(interaction.user.id);
-
-            // Update the giveaway message with the new participants count
             const message = await interaction.message.fetch();
             const embed = EmbedBuilder.from(message.embeds[0]);
             const enteredText = `Entered: ${giveaway.participants.size} users`;
             embed.setDescription(embed.data.description.replace(/Entered: \d+ users/, enteredText));
 
             await message.edit({ embeds: [embed] });
-            return interaction.reply({ content: 'You have been entered into the giveaway!', ephemeral: true });
-         }
 
-         // Überprüfe, ob der Button für das Leaderboard ist
+            await interaction.reply({ content: responseMessage, ephemeral: true });
+            await saveGiveaways(giveaways);
+            return;
+         }
          if (customId === 'daily_leaderboard' || customId === 'weekly_leaderboard' || customId === 'monthly_leaderboard') {
             const period = customId.split('_')[0];
             try {

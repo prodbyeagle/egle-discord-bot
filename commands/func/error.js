@@ -1,11 +1,21 @@
 const { EmbedBuilder } = require('discord.js');
 
+const blacklist = [
+   'Error ending giveaway with message ID:'
+];
+
 async function logError(client, error, context) {
    const logChannelId = '1250827063158378518';
    const logChannel = await client.channels.fetch(logChannelId);
 
    if (!logChannel) {
       console.error('Log channel not found');
+      return;
+   }
+
+   const isInBlacklist = blacklist.some(text => context.includes(text));
+
+   if (isInBlacklist) {
       return;
    }
 
@@ -19,7 +29,7 @@ async function logError(client, error, context) {
          { name: 'Error', value: error.message || 'Unknown error', inline: true },
          { name: 'Timestamp', value: `<t:${timestamp}:R>`, inline: true }
       )
-      .setFooter({ text: `🦅 made by @prodbyeagle` })
+      .setFooter({ text: '🦅 made by @prodbyeagle' })
       .setTimestamp();
 
    await logChannel.send({ embeds: [embed] });
