@@ -3,7 +3,7 @@ const { Client, GatewayIntentBits, Collection, EmbedBuilder } = require('discord
 const fs = require('fs');
 const { addXP } = require('./commands/func/addXP');
 const { getLeaderboard } = require('./commands/func/getLeaderboard');
-const { handleButtonInteraction } = require('./scripts');
+const { handleButtonInteraction, handleReasonModalSubmit, handleApplicationModalSubmit } = require('./commands/func/application_modal');
 const { checkEventTime } = require('./commands/func/checkEventTime');
 const { sendLevelUpMessage } = require('./commands/func/sendLevelUpMessage');
 const { logCommand } = require('./commands/func/logging');
@@ -144,7 +144,7 @@ client.on('interactionCreate', async interaction => {
                const leaderboard = await getLeaderboard(period);
 
                const embed = new EmbedBuilder()
-                  .setTitle(`${capitalizeFirstLetter(period)} Leaderboard`)
+                  .setTitle(`${(period)} Leaderboard`)
                   .setColor('Blue')
                   .setTimestamp()
                   .setFooter({ text: '🦅 made by @prodbyeagle' });
@@ -240,10 +240,8 @@ client.on('interactionCreate', async interaction => {
       } else if (interaction.isModalSubmit()) {
          try {
             if (interaction.customId === 'applicationModal') {
-               const { handleApplicationModalSubmit } = require('./scripts');
                await handleApplicationModalSubmit(interaction, client);
             } else if (interaction.customId.endsWith('ReasonModal')) {
-               const { handleReasonModalSubmit } = require('./scripts');
                await handleReasonModalSubmit(interaction);
             }
          } catch (error) {
@@ -255,8 +253,4 @@ client.on('interactionCreate', async interaction => {
    }
 });
 
-client.login(process.env.DISCORD_TOKEN);
-
-function capitalizeFirstLetter(string) {
-   return string.charAt(0).toUpperCase() + string.slice(1);
-}
+client.login(process.env.DISCORD_TOKEN)

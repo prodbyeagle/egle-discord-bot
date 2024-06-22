@@ -43,7 +43,7 @@ async function giveRndXP(numMembers, totalXP, guild) {
          await users.updateOne({ userId }, { $set: { xp: user.xp, level: user.level } });
       }
    } finally {
-      // Die Verbindung wird in der connectDB-Funktion geschlossen
+      // nothing
    }
 }
 
