@@ -44,6 +44,8 @@ module.exports = {
       ),
    async execute(interaction) {
       try {
+         await interaction.deferReply({ ephemeral: true });
+
          const subcommand = interaction.options.getSubcommand();
 
          if (!interaction.client.db) {
@@ -83,7 +85,7 @@ module.exports = {
             giveaways.set(message.id, { prize, endTime, participants: new Set(), winnersCount, messageId: message.id });
 
             await saveGiveaways(giveaways);
-            await interaction.reply({ content: `Giveaway started in <#${GIVEAWAY_CHANNEL_ID}>`, ephemeral: true });
+            await interaction.editReply({ content: `Giveaway started in <#${GIVEAWAY_CHANNEL_ID}>` });
 
             await setTimeout(duration * 60000);
             await endGiveaway(message.id, interaction.client);
@@ -92,27 +94,27 @@ module.exports = {
             const activeGiveaway = [...giveaways.values()].find(g => g.endTime > Date.now());
 
             if (!activeGiveaway) {
-               return interaction.reply({ content: 'There is no active giveaway to enter.', ephemeral: true });
+               return interaction.editReply({ content: 'There is no active giveaway to enter.' });
             }
 
             activeGiveaway.participants.add(interaction.user.id);
             await saveGiveaways(giveaways);
-            return interaction.reply({ content: 'You have been entered into the giveaway!', ephemeral: true });
+            return interaction.editReply({ content: 'You have been entered into the giveaway!' });
 
          } else if (subcommand === 'end') {
             const activeGiveaway = [...giveaways.values()].find(g => g.endTime > Date.now());
 
             if (!activeGiveaway) {
-               return interaction.reply({ content: 'There is no active giveaway to end.', ephemeral: true });
+               return interaction.editReply({ content: 'There is no active giveaway to end.' });
             }
 
             await endGiveaway(activeGiveaway.messageId, interaction.client);
             await saveGiveaways(giveaways);
-            return interaction.reply({ content: 'The giveaway has been ended and winners have been selected.', ephemeral: true });
+            return interaction.editReply({ content: 'The giveaway has been ended and winners have been selected.' });
          }
       } catch (error) {
          await logError(interaction.client, error, `Error executing giveaway command: ${interaction.options.getSubcommand()}`);
-         await interaction.reply({ content: `There was an error while executing the command: ${error.message}`, ephemeral: true });
+         await interaction.editReply({ content: `There was an error while executing the command: ${error.message}` });
       }
    },
    giveaways
