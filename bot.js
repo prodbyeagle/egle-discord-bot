@@ -30,7 +30,7 @@ for (const file of commandFiles) {
    client.commands.set(command.data.name, command);
 }
 
-client.currentMode = Modes.DEBUG;
+client.currentMode = Modes.ONLINE;
 
 client.once('ready', async () => {
    debug(`Logged in as ${client.user.tag}`, 'login');
