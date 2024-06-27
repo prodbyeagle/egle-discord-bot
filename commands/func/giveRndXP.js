@@ -45,7 +45,7 @@ async function giveRndXP(numMembers, totalXP, guild) {
             debug(`User ${userId} leveled up to ${user.level}`, 'info');
          }
 
-         await users.updateOne({ userId }, { $set: { xp: user.xp, level: user.level } });
+         await users.updateOne({ userId }, { $set: { userId: userId, xp: user.xp, username: user.username, level: user.level } });
          debug(`XP updated for user ${userId}: ${totalXP} XP added`, 'info');
       }
    } catch (error) {

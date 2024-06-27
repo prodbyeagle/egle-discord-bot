@@ -1,7 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
 const { getDatabase, connectToDatabase } = require('./func/connectDB');
 
-// Function to format XP values
 function formatXPValue(xp) {
    if (xp >= 1e12) {
       return (xp / 1e12).toFixed(1) + 'T';
