@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const { giveRndXP } = require('./func/giveRndXP');
 const { logError } = require('./func/error');
+const _ = require('lodash');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -21,14 +22,24 @@ module.exports = {
         const guild = interaction.guild;
 
         try {
-            await giveRndXP(numMembers, totalXP, guild);
+            // Fetch guild members
+            const guildMembers = guild.members.cache.array();
+
+            // Select random members
+            const randomMembers = _.sampleSize(guildMembers, numMembers);
+
+            // Array to store usernames
+            const usernames = randomMembers.map(member => member.user.username);
+
+            // Give XP to random members
+            await giveRndXP(numMembers, totalXP, guild, usernames);
 
             const embed = new EmbedBuilder()
                 .setColor(0x7289DA)
                 .setTitle('XP Given')
                 .setDescription(`Successfully given ${totalXP} XP to ${numMembers} members.`)
                 .setTimestamp()
-                .setFooter({ text: '🦅 made by @prodbyeagle' });
+                .setFooter('🦅 made by @prodbyeagle');
 
             if (numMembers <= 0) {
                 embed.setDescription('No members were mentioned.');
@@ -42,7 +53,7 @@ module.exports = {
                 .setTitle('Error')
                 .setDescription('There was an error while giving XP.')
                 .setTimestamp()
-                .setFooter({ text: '🦅 made by @prodbyeagle' });
+                .setFooter('🦅 made by @prodbyeagle');
             await interaction.reply({ embeds: [errorEmbed], ephemeral: true });
         }
     }

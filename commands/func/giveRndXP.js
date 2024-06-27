@@ -1,8 +1,7 @@
-require('dotenv').config();
 const { getDatabase, connectToDatabase } = require('./connectDB');
 const { debug } = require('../func/debug');
 
-async function giveRndXP(numMembers, totalXP, guild) {
+async function giveRndXP(numMembers, totalXP, guild, usernames) {
    try {
       debug('Connecting to database...', 'info');
       await connectToDatabase();
@@ -17,6 +16,7 @@ async function giveRndXP(numMembers, totalXP, guild) {
          throw new Error('No members found.');
       }
 
+      // Select random members
       const selectedMembers = [];
       while (selectedMembers.length < numMembers && selectedMembers.length < nonBotMembers.length) {
          const randomIndex = Math.floor(Math.random() * nonBotMembers.length);
@@ -26,12 +26,15 @@ async function giveRndXP(numMembers, totalXP, guild) {
          }
       }
 
-      for (const member of selectedMembers) {
+      for (let i = 0; i < selectedMembers.length; i++) {
+         const member = selectedMembers[i];
          const userId = member.user.id;
+         const username = usernames[i]; // Get username corresponding to the member
+
          let user = await users.findOne({ userId });
 
          if (!user) {
-            user = { userId, xp: 0, level: 0 };
+            user = { userId, xp: 0, level: 0, username }; // Add username when creating new user
             await users.insertOne(user);
             debug(`New user created: ${userId}`, 'info');
          }
@@ -45,7 +48,8 @@ async function giveRndXP(numMembers, totalXP, guild) {
             debug(`User ${userId} leveled up to ${user.level}`, 'info');
          }
 
-         await users.updateOne({ userId }, { $set: { userId: userId, xp: user.xp, username: user.username, level: user.level } });
+         // Update user including username
+         await users.updateOne({ userId }, { $set: { xp: user.xp, level: user.level, username } });
          debug(`XP updated for user ${userId}: ${totalXP} XP added`, 'info');
       }
    } catch (error) {
